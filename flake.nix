@@ -80,7 +80,7 @@
           lib.attrsets.genAttrs targets (target:
             (cross-naersk'.buildPackage target) nearskOpt)
           // {
-            inherit (pkgs) logging-extractor;
+            inherit (pkgs) logging-extractor extracted-logs;
             check = naersk'.buildPackage (nearskOpt
               // {
                 mode = "check";
