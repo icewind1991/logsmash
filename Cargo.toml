@@ -11,3 +11,6 @@ regex = "1.10.5"
 log = "0.4.22"
 clap = { version = "=4.1.3", features = ["derive"] }
 cloud-log-analyser-data = { version = "0.1.0", path = "./data" }
+
+[profile.dev.package."*"]
+opt-level = 3
