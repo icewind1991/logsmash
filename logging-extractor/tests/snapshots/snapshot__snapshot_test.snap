@@ -1,0 +1,57 @@
+---
+source: tests/snapshot.rs
+expression: output
+---
+[
+  {
+    "level": "error",
+    "path": "/DefaultShareProvider.php",
+    "line": 1171,
+    "message_parts": []
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1392,
+    "message_parts": [
+      "Share notification not sent to ",
+      " because user could not be found."
+    ]
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1401,
+    "message_parts": [
+      "Share notification not sent to ",
+      " because email address is not set."
+    ]
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1416,
+    "message_parts": [
+      "Sent share notification to ",
+      " for share with ID ",
+      "."
+    ]
+  },
+  {
+    "level": "error",
+    "path": "/DefaultShareProvider.php",
+    "line": 1420,
+    "message_parts": [
+      "Share notification mail could not be sent."
+    ]
+  },
+  {
+    "level": "error",
+    "path": "/DefaultShareProvider.php",
+    "line": 1507,
+    "message_parts": [
+      "Share notification mail could not be sent to: ",
+      ", "
+    ]
+  }
+]
