@@ -7,8 +7,10 @@
   url,
   major,
   sha256,
-}:
-stdenvNoCC.mkDerivation rec {
+  mode ? "json",
+}: let
+  ext = if mode == "rust" then "rs" else "json";
+in stdenvNoCC.mkDerivation rec {
   pname = "extractor-logs-${name}-${major}";
   inherit version;
 
@@ -19,11 +21,11 @@ stdenvNoCC.mkDerivation rec {
   nativeBuildInputs = [logging-extractor];
 
   buildPhase = ''
-    logging-extractor . > logs.json
+    logging-extractor . ${mode} > logs.${ext}
   '';
 
   installPhase = ''
-    mkdir -p $out/${name}/${major}
-    cp logs.json $out/${name}/${major}
+    mkdir -p $out
+    cp logs.* $out/${name}_${major}.${ext}
   '';
 }

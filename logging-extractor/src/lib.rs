@@ -7,11 +7,13 @@ use std::io::{Read, Write};
 use tracing::error;
 use walkdir::WalkDir;
 
+mod bake;
 pub mod error;
 pub mod extractor;
 mod level;
 pub mod string;
 
+use crate::bake::bake_statement;
 pub use level::LogLevel;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -22,12 +24,22 @@ pub struct LoggingStatement<'a> {
     message_parts: Vec<Cow<'a, str>>,
 }
 
-pub fn extract_dir<W: Write>(root: &str, mut output: W) -> Result<(), Error> {
+pub fn extract_dir<W: Write>(root: &str, mut output: W, bake: bool) -> Result<(), Error> {
     let mut code_buff = String::with_capacity(32 * 1024 * 1024);
 
-    writeln!(&mut output, "[").ok();
+    if bake {
+        writeln!(
+            &mut output,
+            "pub const STATEMENTS: &[crate::LoggingStatement] = &[\n"
+        )
+        .ok();
+    } else {
+        writeln!(&mut output, "[").ok();
+    }
 
     let mut first_line = true;
+
+    let mut bake_buff = String::with_capacity(1024 * 1024);
 
     let extractor = LogExtractor::new();
 
@@ -57,13 +69,23 @@ pub fn extract_dir<W: Write>(root: &str, mut output: W) -> Result<(), Error> {
                     }
                     first_line = false;
                     write!(&mut output, "\t").ok();
-                    let _ = serde_json::to_writer(&mut output, &log_item);
+                    if bake {
+                        bake_buff.clear();
+                        bake_statement(&mut bake_buff, &log_item);
+                        writeln!(&mut output, "{bake_buff}").ok();
+                    } else {
+                        let _ = serde_json::to_writer(&mut output, &log_item);
+                    }
                 }
             }
         }
     }
 
-    writeln!(&mut output, "\n]").ok();
+    if bake {
+        writeln!(&mut output, "];\n").ok();
+    } else {
+        writeln!(&mut output, "\n]").ok();
+    }
 
     Ok(())
 }

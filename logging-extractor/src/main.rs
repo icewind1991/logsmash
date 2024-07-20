@@ -6,6 +6,7 @@ use std::io::stdout;
 
 fn main() -> Result<(), Error> {
     let root = args().nth(1).expect("no root provided");
+    let mode = args().nth(2).unwrap_or_else(|| "json".into());
     let root = canonicalize(&root).map_err(|err| Error::RealPath {
         path: root.into(),
         err,
@@ -14,5 +15,5 @@ fn main() -> Result<(), Error> {
 
     let stdout = stdout();
 
-    extract_dir(root, stdout)
+    extract_dir(root, stdout, mode == "rust")
 }

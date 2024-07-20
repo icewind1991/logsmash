@@ -19,6 +19,7 @@ walkdir = "2.5.0"
 tree-sitter = "0.22.6"
 tree-sitter-php = "0.22.7"
 memchr = "2.7.4"
+databake = { version = "0.1.8", features = ["derive"] }
 
 [build-dependencies]
 cc = "1.1.6"

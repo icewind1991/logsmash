@@ -34,14 +34,10 @@
 
         msrv = (fromTOML (readFile ./Cargo.toml)).package.rust-version;
         extractorMsrv = (fromTOML (readFile ./logging-extractor/Cargo.toml)).package.rust-version;
-        toolchain = rust-bin.stable.latest.default;
         msrvToolchain = rust-bin.stable."${msrv}".default;
         extractorMsrvToolchain = rust-bin.stable."${extractorMsrv}".default;
 
-        naersk' = callPackage naersk {
-          rustc = toolchain;
-          cargo = toolchain;
-        };
+        naersk' = callPackage naersk {};
         msrvNaersk = callPackage naersk {
           rustc = msrvToolchain;
           cargo = msrvToolchain;
@@ -80,12 +76,12 @@
           lib.attrsets.genAttrs targets (target:
             (cross-naersk'.buildPackage target) nearskOpt)
           // {
-            inherit (pkgs) logging-extractor extracted-logs;
+            inherit (pkgs) logging-extractor extracted-logs extracted-logs-rust;
             check = naersk'.buildPackage (nearskOpt
               // {
                 mode = "check";
               });
-            checkExtractor = naersk'.buildPackage (nearskOpt
+            extractorCheck = naersk'.buildPackage (nearskOpt
               // {
                 mode = "check";
                 root = extractorSrc;
@@ -111,7 +107,7 @@
         releaseMatrix = buildMatrix releaseTargets;
 
         devShells.default = mkShell {
-          nativeBuildInputs = with pkgs; [toolchain bacon cargo-msrv cargo-insta];
+          nativeBuildInputs = with pkgs; [cargo rustc bacon cargo-msrv cargo-insta];
         };
       }
     )

@@ -1,0 +1,8 @@
+[package]
+name = "cloud-log-analyser-data"
+description = "static data for cloud-log-analyser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
