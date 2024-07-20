@@ -4,6 +4,88 @@ expression: output
 ---
 [
   {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 129,
+    "message_parts": [
+      "invalid share type!"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 305,
+    "message_parts": [
+      "Group \"",
+      "\" does not exist"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 309,
+    "message_parts": [
+      "Recipient not in receiving group"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 339,
+    "message_parts": [
+      "Recipient does not match"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 344,
+    "message_parts": [
+      "Invalid shareType"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 431,
+    "message_parts": [
+      "Group \"",
+      "\" does not exist"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 476,
+    "message_parts": [
+      "Recipient does not match"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 482,
+    "message_parts": [
+      "Invalid shareType"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 609,
+    "message_parts": [
+      "non-shallow getSharesInFolder is no longer supported"
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 963,
+    "message_parts": [
+      "Invalid backend"
+    ]
+  },
+  {
     "level": "error",
     "path": "/DefaultShareProvider.php",
     "line": 1171,

@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::extractor::LogExtractor;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fs::File;
 use std::io::{Read, Write};
 use tracing::error;
@@ -9,6 +10,7 @@ use walkdir::WalkDir;
 pub mod error;
 pub mod extractor;
 mod level;
+pub mod string;
 
 pub use level::LogLevel;
 
@@ -17,7 +19,7 @@ pub struct LoggingStatement<'a> {
     level: LogLevel,
     path: &'a str,
     line: usize,
-    message_parts: Vec<&'a str>,
+    message_parts: Vec<Cow<'a, str>>,
 }
 
 pub fn extract_dir<W: Write>(root: &str, mut output: W) -> Result<(), Error> {

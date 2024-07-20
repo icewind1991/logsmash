@@ -90,6 +90,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "insta",
+ "memchr",
  "serde",
  "serde_json",
  "test-case",

@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Default, PartialEq)]
 pub enum LogLevel {
@@ -11,6 +11,7 @@ pub enum LogLevel {
     Alert,
     Critical,
     Emergency,
+    Exception,
     #[default]
     Unknown,
 }
@@ -26,6 +27,7 @@ impl LogLevel {
             "alert" => Some(LogLevel::Alert),
             "critical" => Some(LogLevel::Critical),
             "emergency" => Some(LogLevel::Emergency),
+            "exception" => Some(LogLevel::Exception),
             "log" => Some(LogLevel::Unknown),
             _ => None,
         }
@@ -41,6 +43,7 @@ impl LogLevel {
             LogLevel::Alert => "alert",
             LogLevel::Critical => "critical",
             LogLevel::Emergency => "emergency",
+            LogLevel::Exception => "exception",
             LogLevel::Unknown => "log",
         }
     }
@@ -64,7 +67,7 @@ impl Display for LogLevel {
 impl<'de> Deserialize<'de> for LogLevel {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         let s = <&str>::deserialize(deserializer)?;
         Ok(LogLevel::parse(s).unwrap_or_default())
