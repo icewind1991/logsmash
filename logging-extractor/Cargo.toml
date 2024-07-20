@@ -10,6 +10,8 @@ rust-version = "1.66.0"
 name = "logging-extractor"
 
 [dependencies]
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 thiserror = "1.0.63"
 clap = { version = "4.5.9", features = ["derive"] }
 serde = { version = "1.0.204", features = ["derive"] }

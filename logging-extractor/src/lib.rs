@@ -3,6 +3,7 @@ use crate::extractor::LogExtractor;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
+use tracing::error;
 use walkdir::WalkDir;
 
 pub mod error;
@@ -31,25 +32,29 @@ pub fn extract_dir<W: Write>(root: &str, mut output: W) -> Result<(), Error> {
     for file in WalkDir::new(root).into_iter().flatten() {
         let path = file.path();
         if let Some(path) = path.to_str() {
-            if path.ends_with(".php") {
+            if file.file_type().is_file() && path.ends_with(".php") {
                 code_buff.clear();
 
                 let rel_path = &path[root.len()..];
 
-                let mut fh = File::open(path).map_err(|err| Error::Open {
-                    path: path.into(),
-                    err,
-                })?;
-                fh.read_to_string(&mut code_buff)
-                    .map_err(|err| Error::Read {
-                        path: path.into(),
-                        err,
-                    })?;
+                let mut fh = match File::open(path) {
+                    Ok(fh) => fh,
+                    Err(err) => {
+                        error!(?err, path, "error opening file");
+                        continue;
+                    }
+                };
+                let res = fh.read_to_string(&mut code_buff);
+                if let Err(err) = res {
+                    error!(?err, path, "error reading file");
+                    continue;
+                }
                 for log_item in extractor.extract(rel_path, &code_buff) {
                     if !first_line {
                         writeln!(&mut output, ",").ok();
                     }
                     first_line = false;
+                    write!(&mut output, "\t").ok();
                     let _ = serde_json::to_writer(&mut output, &log_item);
                 }
             }
