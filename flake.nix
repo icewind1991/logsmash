@@ -6,7 +6,6 @@
     naersk.inputs.nixpkgs.follows = "nixpkgs";
     rust-overlay.url = "github:oxalica/rust-overlay";
     rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
-    rust-overlay.inputs.flake-utils.follows = "flake-utils";
     cross-naersk.url = "github:icewind1991/cross-naersk";
     cross-naersk.inputs.nixpkgs.follows = "nixpkgs";
     cross-naersk.inputs.naersk.follows = "naersk";
@@ -24,7 +23,7 @@
       system: let
         overlays = [
           (import rust-overlay)
-          (import ./overlay.nix)
+          (import ./nix/overlay.nix)
         ];
         pkgs = (import nixpkgs) {
           inherit system overlays;
@@ -34,8 +33,10 @@
         inherit (builtins) fromTOML readFile map;
 
         msrv = (fromTOML (readFile ./Cargo.toml)).package.rust-version;
+        extractorMsrv = (fromTOML (readFile ./logging-extractor/Cargo.toml)).package.rust-version;
         toolchain = rust-bin.stable.latest.default;
         msrvToolchain = rust-bin.stable."${msrv}".default;
+        extractorMsrvToolchain = rust-bin.stable."${extractorMsrv}".default;
 
         naersk' = callPackage naersk {
           rustc = toolchain;
@@ -44,6 +45,10 @@
         msrvNaersk = callPackage naersk {
           rustc = msrvToolchain;
           cargo = msrvToolchain;
+        };
+        extractorMsrvNaersk = callPackage naersk {
+          rustc = extractorMsrvToolchain;
+          cargo = extractorMsrvToolchain;
         };
         cross-naersk' = pkgs.callPackage cross-naersk {inherit naersk;};
 
@@ -65,6 +70,7 @@
         releaseTargets = lib.lists.remove hostTarget targets;
 
         src = sourceByRegex ./. ["Cargo.*" "(src)(/.*)?"];
+        extractorSrc = sourceByRegex ./logging-extractor ["Cargo.*" "(src)(/.*)?"];
         nearskOpt = {
           pname = "cloud-log-analyser";
           root = src;
@@ -74,10 +80,15 @@
           lib.attrsets.genAttrs targets (target:
             (cross-naersk'.buildPackage target) nearskOpt)
           // {
-            shelve = pkgs.shelve;
+            inherit (pkgs) logging-extractor;
             check = naersk'.buildPackage (nearskOpt
               // {
                 mode = "check";
+              });
+            checkExtractor = naersk'.buildPackage (nearskOpt
+              // {
+                mode = "check";
+                root = extractorSrc;
               });
             clippy = naersk'.buildPackage (nearskOpt
               // {
@@ -86,6 +97,11 @@
             msrv = msrvNaersk.buildPackage (nearskOpt
               // {
                 mode = "check";
+              });
+            extractorMsrv = extractorMsrvNaersk.buildPackage (nearskOpt
+              // {
+                mode = "check";
+                root = extractorSrc;
               });
             default = pkgs.shelve;
           };
@@ -100,6 +116,6 @@
       }
     )
     // {
-      overlays.default = import ./overlay.nix;
+      overlays.default = import ./nix/overlay.nix;
     };
 }
