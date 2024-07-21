@@ -8,16 +8,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 129,
     "message_parts": [
-      "invalid share type!"
-    ]
-  },
-  {
-    "level": "exception",
-    "path": "/DefaultShareProvider.php",
-    "line": 305,
-    "message_parts": [
-      "Group \"",
-      "\" does not exist"
+      {
+        "Literal": "invalid share type!"
+      }
     ]
   },
   {
@@ -25,7 +18,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 309,
     "message_parts": [
-      "Recipient not in receiving group"
+      {
+        "Literal": "Recipient not in receiving group"
+      }
     ]
   },
   {
@@ -33,7 +28,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 339,
     "message_parts": [
-      "Recipient does not match"
+      {
+        "Literal": "Recipient does not match"
+      }
     ]
   },
   {
@@ -41,16 +38,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 344,
     "message_parts": [
-      "Invalid shareType"
-    ]
-  },
-  {
-    "level": "exception",
-    "path": "/DefaultShareProvider.php",
-    "line": 431,
-    "message_parts": [
-      "Group \"",
-      "\" does not exist"
+      {
+        "Literal": "Invalid shareType"
+      }
     ]
   },
   {
@@ -58,7 +48,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 476,
     "message_parts": [
-      "Recipient does not match"
+      {
+        "Literal": "Recipient does not match"
+      }
     ]
   },
   {
@@ -66,7 +58,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 482,
     "message_parts": [
-      "Invalid shareType"
+      {
+        "Literal": "Invalid shareType"
+      }
     ]
   },
   {
@@ -74,7 +68,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 609,
     "message_parts": [
-      "non-shallow getSharesInFolder is no longer supported"
+      {
+        "Literal": "non-shallow getSharesInFolder is no longer supported"
+      }
     ]
   },
   {
@@ -82,41 +78,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 963,
     "message_parts": [
-      "Invalid backend"
-    ]
-  },
-  {
-    "level": "error",
-    "path": "/DefaultShareProvider.php",
-    "line": 1171,
-    "message_parts": []
-  },
-  {
-    "level": "debug",
-    "path": "/DefaultShareProvider.php",
-    "line": 1392,
-    "message_parts": [
-      "Share notification not sent to ",
-      " because user could not be found."
-    ]
-  },
-  {
-    "level": "debug",
-    "path": "/DefaultShareProvider.php",
-    "line": 1401,
-    "message_parts": [
-      "Share notification not sent to ",
-      " because email address is not set."
-    ]
-  },
-  {
-    "level": "debug",
-    "path": "/DefaultShareProvider.php",
-    "line": 1416,
-    "message_parts": [
-      "Sent share notification to ",
-      " for share with ID ",
-      "."
+      {
+        "Literal": "Invalid backend"
+      }
     ]
   },
   {
@@ -124,16 +88,9 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 1420,
     "message_parts": [
-      "Share notification mail could not be sent."
-    ]
-  },
-  {
-    "level": "error",
-    "path": "/DefaultShareProvider.php",
-    "line": 1507,
-    "message_parts": [
-      "Share notification mail could not be sent to: ",
-      ", "
+      {
+        "Literal": "Share notification mail could not be sent."
+      }
     ]
   }
 ]

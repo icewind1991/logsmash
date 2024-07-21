@@ -1,13 +1,11 @@
 use crate::string::{unescape, DoubleQuoteString, SingleQuoteString};
-use crate::{LogLevel, LoggingStatement};
-use std::borrow::Cow;
+use crate::{LogLevel, LoggingStatement, MessagePart};
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
 pub struct LogExtractor {
     language: Language,
     method_query: Query,
     throw_query: Query,
-    string_query: Query,
 }
 
 impl LogExtractor {
@@ -30,13 +28,10 @@ impl LogExtractor {
             )"#,
         )
         .expect("invalid query");
-        let string_query = Query::new(&language, r#"[(string_content)(escape_sequence)]@string"#)
-            .expect("invalid query");
         LogExtractor {
             language,
             method_query,
             throw_query,
-            string_query,
         }
     }
 
@@ -56,41 +51,53 @@ impl LogExtractor {
 
         let mut log_call_cursor = QueryCursor::new();
         let mut throw_call_cursor = QueryCursor::new();
+        let mut tree_cursor = tree.walk();
         let log_calls = self.get_log_calls(&mut log_call_cursor, code, tree.root_node());
         let throw_calls = self.get_throw_calls(&mut throw_call_cursor, code, tree.root_node());
         let mut all = log_calls
             .chain(throw_calls)
-            .map(|call| {
-                let mut string_cursor = QueryCursor::new();
-                let message_parts = string_cursor
-                    .matches(&self.string_query, call.arguments, code.as_bytes())
-                    .map(|result| {
-                        let node = result.captures[0].node;
-                        let raw = node.utf8_text(code.as_bytes()).unwrap_or("malformed utf8");
+            .filter_map(|call| {
+                let argument = call.arguments.child(0)?;
+                if argument.grammar_name() != "string"
+                    && argument.grammar_name() != "encapsed_string"
+                {
+                    return None;
+                }
+                let mut argument_string_parts = argument.children(&mut tree_cursor);
+                let is_double_quote = argument_string_parts.next()?.grammar_name() == r#"""#;
+                let mut message_builder =
+                    MessageBuilder::with_capacity(argument_string_parts.len());
 
-                        if raw.contains('\\') {
-                            let start_char =
-                                code.as_bytes()[node.parent().unwrap().byte_range().start];
-                            Cow::Owned(
-                                if start_char == b'"' {
-                                    unescape::<DoubleQuoteString>(raw)
-                                } else {
-                                    unescape::<SingleQuoteString>(raw)
-                                }
-                                .unwrap(),
-                            )
-                        } else {
-                            Cow::Borrowed(raw)
+                for string_part in argument_string_parts {
+                    match string_part.grammar_name() {
+                        "string_content" => {
+                            let content = string_part.utf8_text(code.as_bytes()).unwrap();
+                            message_builder.push_literal(content);
                         }
-                    })
-                    .collect();
+                        "escape_sequence" => {
+                            let raw = string_part.utf8_text(code.as_bytes()).unwrap();
+                            let content = if is_double_quote {
+                                unescape::<DoubleQuoteString>(raw)
+                            } else {
+                                unescape::<SingleQuoteString>(raw)
+                            }
+                            .unwrap();
+                            message_builder.push_literal(&content);
+                        }
+                        r#"'"# | r#"""# | r#"{"# | r#"}"# => {}
+                        _ => {
+                            let placeholder = string_part.utf8_text(code.as_bytes()).unwrap();
+                            message_builder.push_placeholder(placeholder);
+                        }
+                    }
+                }
 
-                LoggingStatement {
+                Some(LoggingStatement {
                     level: call.level,
                     line: call.line + 1,
                     path,
-                    message_parts,
-                }
+                    message_parts: message_builder.0,
+                })
             })
             .collect::<Vec<_>>();
 
@@ -155,13 +162,33 @@ struct LogCall<'tree> {
     arguments: Node<'tree>,
 }
 
+struct MessageBuilder(Vec<MessagePart>);
+
+impl MessageBuilder {
+    pub fn with_capacity(cap: usize) -> Self {
+        MessageBuilder(Vec::with_capacity(cap))
+    }
+
+    pub fn push_literal(&mut self, content: &str) {
+        if let Some(MessagePart::Literal(last_part)) = self.0.last_mut() {
+            last_part.push_str(content);
+        } else {
+            self.0.push(MessagePart::Literal(content.into()))
+        }
+    }
+
+    pub fn push_placeholder(&mut self, placeholder: &str) {
+        self.0.push(MessagePart::PlaceHolder(placeholder.into()));
+    }
+}
+
 #[test]
 fn test_extract_logging() {
     let code = r#"<?php
       function test() {
         $this->logger->warning("failed to find trash item for $rootTrashedItemName deleted at $rootTrashedItemDate in folder $groupFolderId", ['app' => 'groupfolders']);
-        $logger->info("foobar");
-        throw new FooException("foo \"bar\" \' {$blarg}");
+        $logger->info('foobar');
+        throw new FooException("foo \"bar\" \' {$this->blarg}");
       }
     ?>
     "#;
@@ -174,9 +201,12 @@ fn test_extract_logging() {
             line: 3,
             level: LogLevel::Warn,
             message_parts: vec![
-                "failed to find trash item for ".into(),
-                " deleted at ".into(),
-                " in folder ".into()
+                MessagePart::Literal("failed to find trash item for ".into()),
+                MessagePart::PlaceHolder("$rootTrashedItemName".into()),
+                MessagePart::Literal(" deleted at ".into()),
+                MessagePart::PlaceHolder("$rootTrashedItemDate".into()),
+                MessagePart::Literal(" in folder ".into()),
+                MessagePart::PlaceHolder("$groupFolderId".into()),
             ]
         }
     );
@@ -186,7 +216,7 @@ fn test_extract_logging() {
             path: "foo.php",
             line: 4,
             level: LogLevel::Info,
-            message_parts: vec!["foobar".into()]
+            message_parts: vec![MessagePart::Literal("foobar".into())]
         }
     );
     assert_eq!(
@@ -196,11 +226,8 @@ fn test_extract_logging() {
             line: 5,
             level: LogLevel::Exception,
             message_parts: vec![
-                "foo ".into(),
-                "\"".into(),
-                "bar".into(),
-                "\"".into(),
-                " \\' ".into()
+                MessagePart::Literal(r#"foo "bar" \' "#.into()),
+                MessagePart::PlaceHolder("$this->blarg".into())
             ]
         }
     );

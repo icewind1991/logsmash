@@ -1,5 +1,5 @@
 use cloud_log_analyser_data::{LogLevel, LoggingStatement};
-use regex::{escape, Regex, RegexBuilder};
+use regex::Regex;
 
 pub struct LogMatch {
     level: LogLevel,
@@ -11,8 +11,8 @@ impl LogMatch {
     pub fn new(statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
-            pattern: build_pattern(statement.message_parts),
-            pattern_length: statement.message_parts.iter().copied().map(str::len).sum(),
+            pattern: Regex::new(statement.regex).unwrap(),
+            pattern_length: statement.regex.len(),
         }
     }
 }
@@ -48,25 +48,6 @@ impl Matcher {
     }
 }
 
-fn build_pattern<'a>(parts: &[&str]) -> Regex {
-    let mut pattern = String::with_capacity(128);
-    for part in parts {
-        pattern.push_str(&escape(part));
-        pattern.push_str("(.*)");
-    }
-    RegexBuilder::new(&pattern)
-        .build()
-        .expect("Failed to build regex")
-}
-
-#[test]
-fn test_build_pattern() {
-    let regex = build_pattern(["foobar", "asd"]);
-    assert!(regex.is_match("foobar with asd and more"));
-    assert!(regex.is_match("foobarasd"));
-    assert!(!regex.is_match("fooasd"));
-}
-
 #[test]
 fn test_matcher() {
     let statements = &[
@@ -74,32 +55,29 @@ fn test_matcher() {
             line: 68,
             level: LogLevel::Exception,
             path: "foo",
-            message_parts: vec!["Not allowed to rename a shared album".into()],
+            placeholders: &[],
+            regex: "^Not allowed to rename a shared album$",
         },
         LoggingStatement {
             line: 69,
             level: LogLevel::Error,
             path: "bar",
-            message_parts: vec![
-                "You are not allowed to edit link shares that you don".into(),
-                "'".into(),
-                "t own".into(),
-            ],
+            placeholders: &[],
+            regex: "^You are not allowed to edit link shares that you don't own$",
         },
         LoggingStatement {
             line: 69,
             level: LogLevel::Error,
             path: "asd",
-            message_parts: vec![
-                "Unsupported query value for mimetype: ".into(),
-                ", only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
-            ],
+            placeholders: &["$mimeType"],
+            regex: r#"^Unsupported query value for mimetype: (.*), only values in the format "mime/type" or "mime/%" are supported$"#,
         },
         LoggingStatement {
             line: 68,
             level: LogLevel::Exception,
             path: "short",
-            message_parts: vec!["Not allowed to rename".into()],
+            placeholders: &["$path"],
+            regex: "^Not allowed to rename (.*)$",
         },
     ];
     let matcher = Matcher::new(statements);

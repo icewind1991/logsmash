@@ -115,6 +115,8 @@ dependencies = [
  "databake",
  "insta",
  "memchr",
+ "regex",
+ "regex-syntax",
  "serde",
  "serde_json",
  "test-case",

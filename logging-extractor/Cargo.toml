@@ -20,6 +20,8 @@ tree-sitter = "0.22.6"
 tree-sitter-php = "0.22.7"
 memchr = "2.7.4"
 databake = { version = "0.1.8", features = ["derive"] }
+regex-syntax = "0.8.4"
+regex = "1.10.5"
 
 [build-dependencies]
 cc = "1.1.6"

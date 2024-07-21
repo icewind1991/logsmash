@@ -1,7 +1,6 @@
 use crate::error::Error;
 use crate::extractor::LogExtractor;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::fs::File;
 use std::io::{Read, Write};
 use tracing::error;
@@ -21,7 +20,13 @@ pub struct LoggingStatement<'a> {
     level: LogLevel,
     path: &'a str,
     line: usize,
-    message_parts: Vec<Cow<'a, str>>,
+    message_parts: Vec<MessagePart>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum MessagePart {
+    Literal(String),
+    PlaceHolder(String),
 }
 
 pub fn extract_dir<W: Write>(root: &str, mut output: W, bake: bool) -> Result<(), Error> {

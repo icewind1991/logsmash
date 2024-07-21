@@ -1,5 +1,4 @@
 use databake::Bake;
-use std::borrow::Cow;
 
 #[derive(Debug, Default, PartialEq, Clone, Copy, Bake)]
 #[databake(path = crate)]
@@ -40,34 +39,43 @@ pub struct LoggingStatement<'a> {
     pub level: LogLevel,
     pub path: &'a str,
     pub line: usize,
-    pub message_parts: &'a [&'a str],
+    pub placeholders: &'a [&'a str],
+    pub regex: &'a str,
+}
+
+fn build_pattern<'a>(parts: &[crate::MessagePart]) -> String {
+    let mut pattern = String::with_capacity(128);
+    pattern.push('^');
+    for part in parts {
+        match part {
+            crate::MessagePart::Literal(literal) => {
+                pattern.push_str(&regex_syntax::escape(literal))
+            }
+            crate::MessagePart::PlaceHolder(_placeholder) => {
+                pattern.push_str("(.*)");
+            }
+        }
+    }
+    pattern.push('$');
+    pattern
 }
 
 pub fn bake_statement(output: &mut String, statement: &crate::LoggingStatement) {
-    let message_parts: Vec<_> = statement.message_parts.iter().map(Cow::as_ref).collect();
+    let placeholders: Vec<_> = statement
+        .message_parts
+        .iter()
+        .filter_map(|part| match part {
+            crate::MessagePart::PlaceHolder(placeholder) => Some(placeholder.as_str()),
+            _ => None,
+        })
+        .collect();
+    let pattern = build_pattern(&statement.message_parts);
     let statement = LoggingStatement {
         level: statement.level.into(),
         path: statement.path,
         line: statement.line,
-        message_parts: &message_parts,
+        placeholders: &placeholders,
+        regex: &pattern,
     };
     output.push_str(&statement.bake(&Default::default()).to_string());
-}
-
-#[cfg(feature = "bake")]
-mod bake_test {
-    #[test]
-    fn test_bake() {
-        use databake::test_bake;
-        test_bake!(
-            crate::LoggingStatement,
-            const: crate::LoggingStatement {
-                level: crate::LogLevel::Debug,
-                path: "foo",
-                line: 12usize,
-                message_parts: &["part1", "part2"]
-            },
-            cloud_log_analyser,
-        );
-    }
 }

@@ -26,10 +26,11 @@ impl From<i64> for LogLevel {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LoggingStatement {
     pub level: LogLevel,
     pub path: &'static str,
     pub line: usize,
-    pub message_parts: &'static [&'static str],
+    pub placeholders: &'static [&'static str],
+    pub regex: &'static str,
 }
