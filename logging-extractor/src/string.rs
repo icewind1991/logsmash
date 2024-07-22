@@ -217,6 +217,7 @@ pub fn is_array_key_numeric(string: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::needless_raw_string_hashes)]
     use super::*;
 
     #[test]

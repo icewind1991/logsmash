@@ -5,6 +5,9 @@ mod server_27;
 mod server_28;
 mod server_29;
 
+pub const MIN_VERSION: u32 = 24;
+pub const MAX_VERSION: u32 = 29;
+
 pub fn get_statements(name: &str, version: u32) -> &[crate::LoggingStatement] {
     match (name, version) {
         ("server", 24) => server_24::STATEMENTS,

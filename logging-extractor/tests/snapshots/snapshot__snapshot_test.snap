@@ -7,6 +7,8 @@ expression: output
     "level": "exception",
     "path": "/DefaultShareProvider.php",
     "line": 129,
+    "has_meaningful_message": true,
+    "exception": "\\Exception",
     "message_parts": [
       {
         "Literal": "invalid share type!"
@@ -16,7 +18,27 @@ expression: output
   {
     "level": "exception",
     "path": "/DefaultShareProvider.php",
+    "line": 305,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
+    "message_parts": [
+      {
+        "Literal": "Group \""
+      },
+      {
+        "PlaceHolder": "$share->getSharedWith()"
+      },
+      {
+        "Literal": "\" does not exist"
+      }
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
     "line": 309,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
     "message_parts": [
       {
         "Literal": "Recipient not in receiving group"
@@ -27,6 +49,8 @@ expression: output
     "level": "exception",
     "path": "/DefaultShareProvider.php",
     "line": 339,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
     "message_parts": [
       {
         "Literal": "Recipient does not match"
@@ -37,6 +61,8 @@ expression: output
     "level": "exception",
     "path": "/DefaultShareProvider.php",
     "line": 344,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
     "message_parts": [
       {
         "Literal": "Invalid shareType"
@@ -46,7 +72,27 @@ expression: output
   {
     "level": "exception",
     "path": "/DefaultShareProvider.php",
+    "line": 431,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
+    "message_parts": [
+      {
+        "Literal": "Group \""
+      },
+      {
+        "PlaceHolder": "$share->getSharedWith()"
+      },
+      {
+        "Literal": "\" does not exist"
+      }
+    ]
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
     "line": 476,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
     "message_parts": [
       {
         "Literal": "Recipient does not match"
@@ -57,6 +103,8 @@ expression: output
     "level": "exception",
     "path": "/DefaultShareProvider.php",
     "line": 482,
+    "has_meaningful_message": true,
+    "exception": "ProviderException",
     "message_parts": [
       {
         "Literal": "Invalid shareType"
@@ -67,6 +115,8 @@ expression: output
     "level": "exception",
     "path": "/DefaultShareProvider.php",
     "line": 609,
+    "has_meaningful_message": true,
+    "exception": "\\Exception",
     "message_parts": [
       {
         "Literal": "non-shallow getSharesInFolder is no longer supported"
@@ -76,7 +126,25 @@ expression: output
   {
     "level": "exception",
     "path": "/DefaultShareProvider.php",
+    "line": 763,
+    "has_meaningful_message": false,
+    "exception": "ShareNotFound",
+    "message_parts": []
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 769,
+    "has_meaningful_message": false,
+    "exception": "ShareNotFound",
+    "message_parts": []
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
     "line": 963,
+    "has_meaningful_message": true,
+    "exception": "BackendError",
     "message_parts": [
       {
         "Literal": "Invalid backend"
@@ -84,12 +152,117 @@ expression: output
     ]
   },
   {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 993,
+    "has_meaningful_message": false,
+    "exception": "ShareNotFound",
+    "message_parts": []
+  },
+  {
+    "level": "exception",
+    "path": "/DefaultShareProvider.php",
+    "line": 999,
+    "has_meaningful_message": false,
+    "exception": "ShareNotFound",
+    "message_parts": []
+  },
+  {
+    "level": "error",
+    "path": "/DefaultShareProvider.php",
+    "line": 1171,
+    "has_meaningful_message": false,
+    "exception": null,
+    "message_parts": [
+      {
+        "PlaceHolder": "$e->getMessage()"
+      }
+    ]
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1392,
+    "has_meaningful_message": true,
+    "exception": null,
+    "message_parts": [
+      {
+        "Literal": "Share notification not sent to "
+      },
+      {
+        "PlaceHolder": "$share->getSharedWith()"
+      },
+      {
+        "Literal": " because user could not be found."
+      }
+    ]
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1401,
+    "has_meaningful_message": true,
+    "exception": null,
+    "message_parts": [
+      {
+        "Literal": "Share notification not sent to "
+      },
+      {
+        "PlaceHolder": "$share->getSharedWith()"
+      },
+      {
+        "Literal": " because email address is not set."
+      }
+    ]
+  },
+  {
+    "level": "debug",
+    "path": "/DefaultShareProvider.php",
+    "line": 1416,
+    "has_meaningful_message": true,
+    "exception": null,
+    "message_parts": [
+      {
+        "Literal": "Sent share notification to "
+      },
+      {
+        "PlaceHolder": "$emailAddress"
+      },
+      {
+        "Literal": " for share with ID "
+      },
+      {
+        "PlaceHolder": "$share->getId()"
+      },
+      {
+        "Literal": "."
+      }
+    ]
+  },
+  {
     "level": "error",
     "path": "/DefaultShareProvider.php",
     "line": 1420,
+    "has_meaningful_message": true,
+    "exception": null,
     "message_parts": [
       {
         "Literal": "Share notification mail could not be sent."
+      }
+    ]
+  },
+  {
+    "level": "error",
+    "path": "/DefaultShareProvider.php",
+    "line": 1507,
+    "has_meaningful_message": true,
+    "exception": null,
+    "message_parts": [
+      {
+        "Literal": "Share notification mail could not be sent to: "
+      },
+      {
+        "PlaceHolder": "implode(', ', $failedRecipients)"
       }
     ]
   }

@@ -1,5 +1,5 @@
-use crate::string::{unescape, DoubleQuoteString, SingleQuoteString};
-use crate::{LogLevel, LoggingStatement, MessagePart};
+use crate::messagebuilder::MessageBuilder;
+use crate::{LogLevel, LoggingStatement};
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
 pub struct LogExtractor {
@@ -15,7 +15,7 @@ impl LogExtractor {
             &language,
             r#"(member_call_expression
                 name: (name)@name
-                arguments: (arguments ((argument)+ @arg))
+                arguments: (arguments) @args
             )"#,
         )
         .expect("invalid query");
@@ -23,7 +23,8 @@ impl LogExtractor {
             &language,
             r#"(throw_expression
                 (object_creation_expression
-                    (arguments ((argument)+ @arg))
+                    [(name) (qualified_name)] @name
+                    (arguments) @args
                 )
             )"#,
         )
@@ -51,52 +52,25 @@ impl LogExtractor {
 
         let mut log_call_cursor = QueryCursor::new();
         let mut throw_call_cursor = QueryCursor::new();
-        let mut tree_cursor = tree.walk();
         let log_calls = self.get_log_calls(&mut log_call_cursor, code, tree.root_node());
         let throw_calls = self.get_throw_calls(&mut throw_call_cursor, code, tree.root_node());
         let mut all = log_calls
             .chain(throw_calls)
             .filter_map(|call| {
-                let argument = call.arguments.child(0)?;
-                if argument.grammar_name() != "string"
-                    && argument.grammar_name() != "encapsed_string"
-                {
-                    return None;
-                }
-                let mut argument_string_parts = argument.children(&mut tree_cursor);
-                let is_double_quote = argument_string_parts.next()?.grammar_name() == r#"""#;
-                let mut message_builder =
-                    MessageBuilder::with_capacity(argument_string_parts.len());
+                let mut message_builder = MessageBuilder::with_capacity(16);
 
-                for string_part in argument_string_parts {
-                    match string_part.grammar_name() {
-                        "string_content" => {
-                            let content = string_part.utf8_text(code.as_bytes()).unwrap();
-                            message_builder.push_literal(content);
-                        }
-                        "escape_sequence" => {
-                            let raw = string_part.utf8_text(code.as_bytes()).unwrap();
-                            let content = if is_double_quote {
-                                unescape::<DoubleQuoteString>(raw)
-                            } else {
-                                unescape::<SingleQuoteString>(raw)
-                            }
-                            .unwrap();
-                            message_builder.push_literal(&content);
-                        }
-                        r#"'"# | r#"""# | r#"{"# | r#"}"# => {}
-                        _ => {
-                            let placeholder = string_part.utf8_text(code.as_bytes()).unwrap();
-                            message_builder.push_placeholder(placeholder);
-                        }
-                    }
+                if let Some(argument) = call.arguments {
+                    let argument = argument.child(0)?;
+                    message_builder.push_node(argument, code);
                 }
 
                 Some(LoggingStatement {
                     level: call.level,
                     line: call.line + 1,
                     path,
-                    message_parts: message_builder.0,
+                    has_meaningful_message: message_builder.is_meaningful(),
+                    exception: call.exception,
+                    message_parts: message_builder.into(),
                 })
             })
             .collect::<Vec<_>>();
@@ -120,11 +94,13 @@ impl LogExtractor {
                 .unwrap_or("malformed utf8");
             let level = LogLevel::parse(name)?;
             let line = method_call.captures[0].node.start_position().row;
+
             let arguments = method_call.captures[1].node;
             Some(LogCall {
                 level,
                 line,
-                arguments,
+                arguments: arguments.named_child(0),
+                exception: None,
             })
         })
     }
@@ -137,15 +113,22 @@ impl LogExtractor {
     ) -> impl Iterator<Item = LogCall> + 'a {
         let throws = cursor.matches(&self.throw_query, node, code.as_bytes());
 
-        throws.filter_map(|method_call| {
+        throws.map(|method_call| {
             let level = LogLevel::Exception;
-            let arguments = method_call.captures[0].node;
+            let arguments = method_call.captures[1].node;
             let line = arguments.start_position().row;
-            Some(LogCall {
+            LogCall {
                 level,
                 line,
-                arguments,
-            })
+                arguments: arguments.named_child(0),
+                exception: Some(
+                    method_call.captures[0]
+                        .node
+                        .utf8_text(code.as_bytes())
+                        .unwrap()
+                        .into(),
+                ),
+            }
         })
     }
 }
@@ -159,36 +142,21 @@ impl Default for LogExtractor {
 struct LogCall<'tree> {
     level: LogLevel,
     line: usize,
-    arguments: Node<'tree>,
-}
-
-struct MessageBuilder(Vec<MessagePart>);
-
-impl MessageBuilder {
-    pub fn with_capacity(cap: usize) -> Self {
-        MessageBuilder(Vec::with_capacity(cap))
-    }
-
-    pub fn push_literal(&mut self, content: &str) {
-        if let Some(MessagePart::Literal(last_part)) = self.0.last_mut() {
-            last_part.push_str(content);
-        } else {
-            self.0.push(MessagePart::Literal(content.into()))
-        }
-    }
-
-    pub fn push_placeholder(&mut self, placeholder: &str) {
-        self.0.push(MessagePart::PlaceHolder(placeholder.into()));
-    }
+    exception: Option<String>,
+    arguments: Option<Node<'tree>>,
 }
 
 #[test]
 fn test_extract_logging() {
+    use crate::MessagePart;
+
     let code = r#"<?php
       function test() {
         $this->logger->warning("failed to find trash item for $rootTrashedItemName deleted at $rootTrashedItemDate in folder $groupFolderId", ['app' => 'groupfolders']);
         $logger->info('foobar');
         throw new FooException("foo \"bar\" \' {$this->blarg}");
+        throw new BarException();
+        $this->logger->error('Share notification mail could not be sent to: ' . implode(', ', $failedRecipients));
       }
     ?>
     "#;
@@ -200,6 +168,8 @@ fn test_extract_logging() {
             path: "foo.php",
             line: 3,
             level: LogLevel::Warn,
+            has_meaningful_message: true,
+            exception: None,
             message_parts: vec![
                 MessagePart::Literal("failed to find trash item for ".into()),
                 MessagePart::PlaceHolder("$rootTrashedItemName".into()),
@@ -216,6 +186,8 @@ fn test_extract_logging() {
             path: "foo.php",
             line: 4,
             level: LogLevel::Info,
+            has_meaningful_message: true,
+            exception: None,
             message_parts: vec![MessagePart::Literal("foobar".into())]
         }
     );
@@ -225,9 +197,36 @@ fn test_extract_logging() {
             path: "foo.php",
             line: 5,
             level: LogLevel::Exception,
+            has_meaningful_message: true,
+            exception: Some("FooException".into()),
             message_parts: vec![
                 MessagePart::Literal(r#"foo "bar" \' "#.into()),
                 MessagePart::PlaceHolder("$this->blarg".into())
+            ]
+        }
+    );
+    assert_eq!(
+        logs[3],
+        LoggingStatement {
+            path: "foo.php",
+            line: 6,
+            level: LogLevel::Exception,
+            has_meaningful_message: false,
+            exception: Some("BarException".into()),
+            message_parts: vec![]
+        }
+    );
+    assert_eq!(
+        logs[4],
+        LoggingStatement {
+            path: "foo.php",
+            line: 7,
+            level: LogLevel::Error,
+            has_meaningful_message: true,
+            exception: None,
+            message_parts: vec![
+                MessagePart::Literal("Share notification mail could not be sent to: ".into()),
+                MessagePart::PlaceHolder("implode(', ', $failedRecipients)".into())
             ]
         }
     );

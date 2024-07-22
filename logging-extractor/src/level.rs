@@ -30,6 +30,7 @@ impl LogLevel {
             "emergency" => Some(LogLevel::Emergency),
             "exception" => Some(LogLevel::Exception),
             "log" => Some(LogLevel::Unknown),
+            "printErrorPage" => Some(LogLevel::Unknown),
             _ => None,
         }
     }

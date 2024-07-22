@@ -5,6 +5,8 @@ pub struct LogMatch {
     level: LogLevel,
     pattern: Regex,
     pattern_length: usize,
+    has_meaningful_message: bool,
+    exception: Option<&'static str>,
 }
 
 impl LogMatch {
@@ -13,6 +15,8 @@ impl LogMatch {
             level: statement.level,
             pattern: Regex::new(statement.regex).unwrap(),
             pattern_length: statement.regex.len(),
+            has_meaningful_message: statement.has_meaningful_message,
+            exception: statement.exception,
         }
     }
 }
@@ -33,14 +37,16 @@ impl Matcher {
         let mut best_length = 0;
 
         for (i, log_match) in self.matches.iter().enumerate() {
-            if (log_match.level == level
-                || log_match.level == LogLevel::Exception
-                || level == LogLevel::Unknown)
-                && log_match.pattern.is_match(message)
-                && log_match.pattern_length > best_length
-            {
-                best_match = Some(i);
-                best_length = log_match.pattern_length;
+            if log_match.has_meaningful_message {
+                if (log_match.level == level
+                    || log_match.level == LogLevel::Exception
+                    || level == LogLevel::Unknown)
+                    && log_match.pattern.is_match(message)
+                    && log_match.pattern_length > best_length
+                {
+                    best_match = Some(i);
+                    best_length = log_match.pattern_length;
+                }
             }
         }
 

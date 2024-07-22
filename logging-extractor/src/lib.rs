@@ -10,6 +10,7 @@ mod bake;
 pub mod error;
 pub mod extractor;
 mod level;
+mod messagebuilder;
 pub mod string;
 
 use crate::bake::bake_statement;
@@ -20,6 +21,8 @@ pub struct LoggingStatement<'a> {
     level: LogLevel,
     path: &'a str,
     line: usize,
+    has_meaningful_message: bool,
+    exception: Option<String>,
     message_parts: Vec<MessagePart>,
 }
 
