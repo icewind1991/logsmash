@@ -1,9 +1,10 @@
 final: prev: let
-  inherit (builtins) mapAttrs attrValues map;
+  inherit (builtins) mapAttrs attrValues map tail;
   inherit (prev) symlinkJoin;
   inherit (prev.lib) importJSON;
   inherit (prev.lib.lists) flatten;
-  packages = prev.lib.traceValSeq (importJSON ./versions.json);
+  allPackages = importJSON ./versions.json;
+  packages = {server = {"29" = allPackages.server."29";};};
 
   loggingFor = mode: name:
     mapAttrs (major: data: (final.callPackage ./extracted-logs.nix {

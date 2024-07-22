@@ -73,7 +73,7 @@ pub fn extract_dir<W: Write>(root: &str, mut output: W, bake: bool) -> Result<()
                     continue;
                 }
                 for log_item in extractor.extract(rel_path, &code_buff) {
-                    if !first_line {
+                    if !bake && !first_line {
                         writeln!(&mut output, ",").ok();
                     }
                     first_line = false;
@@ -81,7 +81,7 @@ pub fn extract_dir<W: Write>(root: &str, mut output: W, bake: bool) -> Result<()
                     if bake {
                         bake_buff.clear();
                         bake_statement(&mut bake_buff, &log_item);
-                        writeln!(&mut output, "{bake_buff}").ok();
+                        writeln!(&mut output, "{bake_buff},").ok();
                     } else {
                         let _ = serde_json::to_writer(&mut output, &log_item);
                     }

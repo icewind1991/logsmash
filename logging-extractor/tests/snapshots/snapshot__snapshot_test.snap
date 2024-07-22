@@ -11,7 +11,7 @@ expression: output
     "exception": "\\Exception",
     "message_parts": [
       {
-        "Literal": "invalid share type!"
+        "literal": "invalid share type!"
       }
     ]
   },
@@ -23,13 +23,13 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Group \""
+        "literal": "Group \""
       },
       {
-        "PlaceHolder": "$share->getSharedWith()"
+        "placeholder": "$share->getSharedWith()"
       },
       {
-        "Literal": "\" does not exist"
+        "literal": "\" does not exist"
       }
     ]
   },
@@ -41,7 +41,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Recipient not in receiving group"
+        "literal": "Recipient not in receiving group"
       }
     ]
   },
@@ -53,7 +53,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Recipient does not match"
+        "literal": "Recipient does not match"
       }
     ]
   },
@@ -65,7 +65,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Invalid shareType"
+        "literal": "Invalid shareType"
       }
     ]
   },
@@ -77,13 +77,13 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Group \""
+        "literal": "Group \""
       },
       {
-        "PlaceHolder": "$share->getSharedWith()"
+        "placeholder": "$share->getSharedWith()"
       },
       {
-        "Literal": "\" does not exist"
+        "literal": "\" does not exist"
       }
     ]
   },
@@ -95,7 +95,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Recipient does not match"
+        "literal": "Recipient does not match"
       }
     ]
   },
@@ -107,7 +107,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\ProviderException",
     "message_parts": [
       {
-        "Literal": "Invalid shareType"
+        "literal": "Invalid shareType"
       }
     ]
   },
@@ -119,7 +119,7 @@ expression: output
     "exception": "\\Exception",
     "message_parts": [
       {
-        "Literal": "non-shallow getSharesInFolder is no longer supported"
+        "literal": "non-shallow getSharesInFolder is no longer supported"
       }
     ]
   },
@@ -147,7 +147,7 @@ expression: output
     "exception": "OC\\Share20\\Exception\\BackendError",
     "message_parts": [
       {
-        "Literal": "Invalid backend"
+        "literal": "Invalid backend"
       }
     ]
   },
@@ -175,7 +175,7 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "PlaceHolder": "$e->getMessage()"
+        "placeholder": "$e->getMessage()"
       }
     ]
   },
@@ -187,13 +187,13 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "Literal": "Share notification not sent to "
+        "literal": "Share notification not sent to "
       },
       {
-        "PlaceHolder": "$share->getSharedWith()"
+        "placeholder": "$share->getSharedWith()"
       },
       {
-        "Literal": " because user could not be found."
+        "literal": " because user could not be found."
       }
     ]
   },
@@ -205,13 +205,13 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "Literal": "Share notification not sent to "
+        "literal": "Share notification not sent to "
       },
       {
-        "PlaceHolder": "$share->getSharedWith()"
+        "placeholder": "$share->getSharedWith()"
       },
       {
-        "Literal": " because email address is not set."
+        "literal": " because email address is not set."
       }
     ]
   },
@@ -223,19 +223,19 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "Literal": "Sent share notification to "
+        "literal": "Sent share notification to "
       },
       {
-        "PlaceHolder": "$emailAddress"
+        "placeholder": "$emailAddress"
       },
       {
-        "Literal": " for share with ID "
+        "literal": " for share with ID "
       },
       {
-        "PlaceHolder": "$share->getId()"
+        "placeholder": "$share->getId()"
       },
       {
-        "Literal": "."
+        "literal": "."
       }
     ]
   },
@@ -247,7 +247,7 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "Literal": "Share notification mail could not be sent."
+        "literal": "Share notification mail could not be sent."
       }
     ]
   },
@@ -259,10 +259,10 @@ expression: output
     "exception": null,
     "message_parts": [
       {
-        "Literal": "Share notification mail could not be sent to: "
+        "literal": "Share notification mail could not be sent to: "
       },
       {
-        "PlaceHolder": "implode(', ', $failedRecipients)"
+        "placeholder": "implode(', ', $failedRecipients)"
       }
     ]
   }
