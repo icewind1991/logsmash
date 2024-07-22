@@ -40,7 +40,6 @@ pub struct LoggingStatement<'a> {
     pub path: &'a str,
     pub line: usize,
     pub placeholders: &'a [&'a str],
-    pub has_meaningful_message: bool,
     pub exception: Option<&'a str>,
     pub regex: &'a str,
 }
@@ -76,7 +75,6 @@ pub fn bake_statement(output: &mut String, statement: &crate::LoggingStatement) 
         level: statement.level.into(),
         path: statement.path,
         line: statement.line,
-        has_meaningful_message: statement.has_meaningful_message,
         exception: statement.exception.as_deref(),
         placeholders: &placeholders,
         regex: &pattern,

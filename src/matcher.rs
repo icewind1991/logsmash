@@ -15,7 +15,9 @@ impl LogMatch {
             level: statement.level,
             pattern: Regex::new(statement.regex).unwrap(),
             pattern_length: statement.regex.len(),
-            has_meaningful_message: statement.has_meaningful_message,
+            has_meaningful_message: statement
+                .regex
+                .contains(|c: char| c.is_ascii_alphanumeric()),
             exception: statement.exception,
         }
     }

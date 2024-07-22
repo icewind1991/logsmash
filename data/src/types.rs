@@ -34,7 +34,6 @@ pub struct LoggingStatement {
     pub path: &'static str,
     pub line: usize,
     pub placeholders: &'static [&'static str],
-    pub has_meaningful_message: bool,
     pub exception: Option<&'static str>,
     pub regex: &'static str,
 }

@@ -27,6 +27,7 @@ pub struct LoggingStatement<'a> {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum MessagePart {
     Literal(String),
     PlaceHolder(String),
