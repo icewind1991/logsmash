@@ -167,6 +167,9 @@ dependencies = [
 [[package]]
 name = "cloud-log-analyser-data"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "constant_time_eq"

@@ -50,7 +50,7 @@ fn main() -> MainResult {
                     continue;
                 }
             };
-            if let Some(index) = matcher.match_log(parsed.level.into(), parsed.message.as_ref()) {
+            if let Some(index) = matcher.match_log(&parsed) {
                 counts.entry(index).or_default().add_assign(1);
             } else {
                 unmatched += 1;
@@ -62,13 +62,24 @@ fn main() -> MainResult {
     counts.reverse();
     for (index, count) in counts {
         let statement = &statements[index];
-        println!(
-            "{}: {} line {}: {}",
-            statement.message(),
-            statement.path,
-            statement.line,
-            count
-        );
+        if let Some(exception) = statement.exception {
+            println!(
+                "{}({}): {} line {}: {}",
+                exception,
+                statement.message(),
+                statement.path,
+                statement.line,
+                count
+            );
+        } else {
+                println!(
+                    "{}: {} line {}: {}",
+                    statement.message(),
+                    statement.path,
+                    statement.line,
+                    count
+                );
+        }
     }
     if unmatched > 0 {
         eprintln!("{unmatched} lines couldn't be matched");

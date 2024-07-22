@@ -1,6 +1,8 @@
+use serde::Deserialize;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Default, PartialEq, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Clone, Copy, Deserialize)]
+#[serde(from = "i64")]
 pub enum LogLevel {
     Debug,
     Info,
@@ -25,6 +27,12 @@ impl From<i64> for LogLevel {
             4 => Self::Critical,
             _ => Self::Unknown,
         }
+    }
+}
+
+impl LogLevel {
+    pub fn matches(&self, matcher_level: LogLevel) -> bool {
+        matcher_level == *self || matcher_level == LogLevel::Exception || *self == LogLevel::Unknown
     }
 }
 
