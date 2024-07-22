@@ -8,6 +8,7 @@ pub struct LogLine<'a> {
     pub level: LogLevel,
     pub message: Cow<'a, str>,
     pub exception: Option<Exception<'a>>,
+    pub app: Cow<'a, str>,
 }
 
 impl LogLine<'_> {

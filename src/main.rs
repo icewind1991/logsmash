@@ -40,7 +40,8 @@ fn main() -> MainResult {
 
     let lines = once(first).chain(lines);
     let mut error_count = 0;
-    let mut unmatched = 0;
+    let mut unmatched_total = 0;
+    let mut unmatched = HashMap::new();
     for line in lines {
         if line.starts_with('{') {
             let parsed = match serde_json::from_str::<LogLine>(&line) {
@@ -53,7 +54,12 @@ fn main() -> MainResult {
             if let Some(index) = matcher.match_log(&parsed) {
                 counts.entry(index).or_default().add_assign(1);
             } else {
-                unmatched += 1;
+                unmatched_total += 1;
+                if let Some(entry) = unmatched.get_mut(parsed.app.as_ref()) {
+                    *entry += 1;
+                } else {
+                    unmatched.insert(parsed.app.to_string(), 1);
+                }
             }
         }
     }
@@ -72,20 +78,23 @@ fn main() -> MainResult {
                 count
             );
         } else {
-                println!(
-                    "{}: {} line {}: {}",
-                    statement.message(),
-                    statement.path,
-                    statement.line,
-                    count
-                );
+            println!(
+                "{}: {} line {}: {}",
+                statement.message(),
+                statement.path,
+                statement.line,
+                count
+            );
         }
     }
-    if unmatched > 0 {
-        eprintln!("{unmatched} lines couldn't be matched");
+    if unmatched_total > 0 {
+        eprintln!("\n{unmatched_total} lines couldn't be matched:");
+        for (app, count) in unmatched {
+            eprintln!("\t{app}: {count}");
+        }
     }
     if error_count > 0 {
-        eprintln!("{error_count} lines failed to parse as valid log json");
+        eprintln!("\n{error_count} lines failed to parse as valid log json");
     }
 
     Ok(())
