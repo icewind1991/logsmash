@@ -1,11 +1,13 @@
 use crate::messagebuilder::MessageBuilder;
 use crate::{LogLevel, LoggingStatement};
+use std::collections::HashMap;
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
 pub struct LogExtractor {
     language: Language,
     method_query: Query,
     throw_query: Query,
+    use_query: Query,
 }
 
 impl LogExtractor {
@@ -29,10 +31,19 @@ impl LogExtractor {
             )"#,
         )
         .expect("invalid query");
+        let use_query = Query::new(
+            &language,
+            r#"(namespace_use_clause
+                [(name) (qualified_name)] @name
+                (namespace_aliasing_clause (name) @alias)?
+            )"#,
+        )
+        .expect("invalid query");
         LogExtractor {
             language,
             method_query,
             throw_query,
+            use_query,
         }
     }
 
@@ -52,6 +63,9 @@ impl LogExtractor {
 
         let mut log_call_cursor = QueryCursor::new();
         let mut throw_call_cursor = QueryCursor::new();
+
+        let aliases = self.get_aliases(&mut log_call_cursor, code, tree.root_node());
+
         let log_calls = self.get_log_calls(&mut log_call_cursor, code, tree.root_node());
         let throw_calls = self.get_throw_calls(&mut throw_call_cursor, code, tree.root_node());
         let mut all = log_calls
@@ -64,12 +78,20 @@ impl LogExtractor {
                     message_builder.push_node(argument, code);
                 }
 
+                let exception = call.exception.map(|exception| {
+                    aliases
+                        .get(exception.as_str())
+                        .copied()
+                        .map(String::from)
+                        .unwrap_or(exception)
+                });
+
                 Some(LoggingStatement {
                     level: call.level,
                     line: call.line + 1,
                     path,
                     has_meaningful_message: message_builder.is_meaningful(),
-                    exception: call.exception,
+                    exception,
                     message_parts: message_builder.into(),
                 })
             })
@@ -131,6 +153,37 @@ impl LogExtractor {
             }
         })
     }
+
+    fn get_aliases<'a>(
+        &'a self,
+        cursor: &mut QueryCursor,
+        code: &'a str,
+        node: Node<'a>,
+    ) -> HashMap<&'a str, &'a str> {
+        let use_calls = cursor.matches(&self.use_query, node, code.as_bytes());
+
+        use_calls
+            .map(|method_call| {
+                let source = method_call.captures[0]
+                    .node
+                    .utf8_text(code.as_bytes())
+                    .unwrap_or("malformed utf8")
+                    .trim_start_matches('\\');
+                let target = method_call
+                    .captures
+                    .get(1)
+                    .map(|capture| {
+                        capture
+                            .node
+                            .utf8_text(code.as_bytes())
+                            .expect("invalid utf8")
+                    })
+                    .unwrap_or_else(|| source.rsplit('\\').next().unwrap());
+
+                (target, source)
+            })
+            .collect()
+    }
 }
 
 impl Default for LogExtractor {
@@ -151,6 +204,8 @@ fn test_extract_logging() {
     use crate::MessagePart;
 
     let code = r#"<?php
+      use Bar\BarException;
+      use \Foo\Exception as FooException;
       function test() {
         $this->logger->warning("failed to find trash item for $rootTrashedItemName deleted at $rootTrashedItemDate in folder $groupFolderId", ['app' => 'groupfolders']);
         $logger->info('foobar');
@@ -166,7 +221,7 @@ fn test_extract_logging() {
         logs[0],
         LoggingStatement {
             path: "foo.php",
-            line: 3,
+            line: 5,
             level: LogLevel::Warn,
             has_meaningful_message: true,
             exception: None,
@@ -184,7 +239,7 @@ fn test_extract_logging() {
         logs[1],
         LoggingStatement {
             path: "foo.php",
-            line: 4,
+            line: 6,
             level: LogLevel::Info,
             has_meaningful_message: true,
             exception: None,
@@ -195,10 +250,10 @@ fn test_extract_logging() {
         logs[2],
         LoggingStatement {
             path: "foo.php",
-            line: 5,
+            line: 7,
             level: LogLevel::Exception,
             has_meaningful_message: true,
-            exception: Some("FooException".into()),
+            exception: Some("Foo\\Exception".into()),
             message_parts: vec![
                 MessagePart::Literal(r#"foo "bar" \' "#.into()),
                 MessagePart::PlaceHolder("$this->blarg".into())
@@ -209,10 +264,10 @@ fn test_extract_logging() {
         logs[3],
         LoggingStatement {
             path: "foo.php",
-            line: 6,
+            line: 8,
             level: LogLevel::Exception,
             has_meaningful_message: false,
-            exception: Some("BarException".into()),
+            exception: Some("Bar\\BarException".into()),
             message_parts: vec![]
         }
     );
@@ -220,7 +275,7 @@ fn test_extract_logging() {
         logs[4],
         LoggingStatement {
             path: "foo.php",
-            line: 7,
+            line: 9,
             level: LogLevel::Error,
             has_meaningful_message: true,
             exception: None,
