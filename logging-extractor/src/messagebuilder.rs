@@ -1,23 +1,45 @@
 use crate::string::{unescape, DoubleQuoteString, SingleQuoteString};
 use crate::MessagePart;
+use regex::Regex;
 use tree_sitter::Node;
 
 pub struct MessageBuilder {
     pub parts: Vec<MessagePart>,
+    placeholder_regex: Regex,
 }
 
 impl MessageBuilder {
     pub fn with_capacity(cap: usize) -> Self {
         MessageBuilder {
             parts: Vec::with_capacity(cap),
+            placeholder_regex: Regex::new("\\{([a-zA-Z0-9]+)}").unwrap(),
         }
     }
 
     pub fn push_literal(&mut self, content: &str) {
-        if let Some(MessagePart::Literal(last_part)) = self.parts.last_mut() {
+        if self.placeholder_regex.is_match(content) {
+            let mut start = 0;
+            for placeholder in self.placeholder_regex.find_iter(content) {
+                if placeholder.start() > start {
+                    Self::push_literal_inner(&mut self.parts, &content[start..placeholder.start()]);
+                    self.parts
+                        .push(MessagePart::PlaceHolder(placeholder.as_str().into()));
+                }
+                start = placeholder.end();
+            }
+            if start < content.len() {
+                Self::push_literal_inner(&mut self.parts, content)
+            }
+        } else {
+            Self::push_literal_inner(&mut self.parts, content)
+        }
+    }
+
+    fn push_literal_inner(parts: &mut Vec<MessagePart>, content: &str) {
+        if let Some(MessagePart::Literal(last_part)) = parts.last_mut() {
             last_part.push_str(content);
         } else {
-            self.parts.push(MessagePart::Literal(content.into()))
+            parts.push(MessagePart::Literal(content.into()))
         }
     }
 

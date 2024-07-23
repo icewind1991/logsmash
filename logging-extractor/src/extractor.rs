@@ -244,6 +244,7 @@ fn test_extract_logging() {
         throw new Asd\Exception();
         throw new SomeException();
         throw new \SomeException();
+        $this->logger->error("foo {bar} {asd}");
       }
     ?>
     "#;
@@ -348,6 +349,22 @@ fn test_extract_logging() {
             has_meaningful_message: false,
             exception: Some("SomeException".into()),
             message_parts: vec![]
+        }
+    );
+    assert_eq!(
+        logs[8],
+        LoggingStatement {
+            path: "foo.php",
+            line: 15,
+            level: LogLevel::Error,
+            has_meaningful_message: true,
+            exception: None,
+            message_parts: vec![
+                MessagePart::Literal("foo ".into()),
+                MessagePart::PlaceHolder("{bar}".into()),
+                MessagePart::Literal(" ".into()),
+                MessagePart::PlaceHolder("{asd}".into()),
+            ]
         }
     );
 }

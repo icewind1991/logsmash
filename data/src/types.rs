@@ -34,7 +34,7 @@ impl LogLevel {
         let matcher_level = match matcher_level {
             LogLevel::Notice => LogLevel::Info,
             LogLevel::Alert | LogLevel::Critical | LogLevel::Emergency => LogLevel::Error,
-            _ => matcher_level
+            _ => matcher_level,
         };
         matcher_level == *self || matcher_level == LogLevel::Exception || *self == LogLevel::Unknown
     }
