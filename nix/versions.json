@@ -30,5 +30,19 @@
       "url": "https://download.nextcloud.com/server/releases/nextcloud-24.0.12.zip",
       "sha256": "sha256-+VlQVSTXtEsuoJ3Ic9o4DmFH4CQhMK8KtwiS+SqhiYE="
     }
+  },
+  "files_accesscontrol": {
+    "1.19": {
+      "version": "1.19.1",
+      "url": "https://github.com/nextcloud-releases/files_accesscontrol/releases/download/v1.19.1/files_accesscontrol-v1.19.1.tar.gz",
+      "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80="
+    }
+  },
+  "files_antivirus": {
+    "5.5": {
+      "version": "5.5.7",
+      "url": "https://github.com/nextcloud-releases/files_antivirus/releases/download/v5.5.7/files_antivirus-v5.5.7.tar.gz",
+      "sha256": "sha256-Sg6AeqopaXrXrZ6loq+B5ZBjh2SHIflXaf6u/cIBqUo="
+    }
   }
 }

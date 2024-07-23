@@ -4,7 +4,10 @@ final: prev: let
   inherit (prev.lib) importJSON;
   inherit (prev.lib.lists) flatten;
   allPackages = importJSON ./versions.json;
-  packages = {server = {"29" = allPackages.server."29";};};
+  packages = {
+    server = {"29" = allPackages.server."29";};
+    inherit (allPackages) files_accesscontrol files_antivirus;
+  };
 
   loggingFor = mode: name:
     mapAttrs (major: data: (final.callPackage ./extracted-logs.nix {

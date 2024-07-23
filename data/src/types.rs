@@ -46,34 +46,88 @@ pub struct LoggingStatement {
     pub regex: &'static str,
 }
 
-impl Display for LoggingStatement {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Some(exception) = self.exception {
-            write!(
-                f,
-                "{}({}): {} line {}",
-                exception,
-                self.message(),
-                self.path,
-                self.line
-            )
-        } else {
-            write!(f, "{}: {} line {}", self.message(), self.path, self.line)
+impl LoggingStatement {
+    pub fn with_path_prefix(&self, path_prefix: &'static str) -> LoggingStatementWithPathPrefix {
+        LoggingStatementWithPathPrefix {
+            level: self.level,
+            path_prefix,
+            path: self.path,
+            line: self.line,
+            placeholders: self.placeholders,
+            exception: self.exception,
+            regex: self.regex,
+        }
+    }
+
+    pub fn message(&self) -> impl Display + '_ {
+        LoggingMessage {
+            message: self.clone(),
         }
     }
 }
 
-impl LoggingStatement {
-    pub fn message(&self) -> impl Display + '_ {
-        LoggingMessage { message: &self }
+#[derive(Debug, PartialEq, Clone)]
+pub struct LoggingStatementWithPathPrefix {
+    pub level: LogLevel,
+    pub path_prefix: &'static str,
+    pub path: &'static str,
+    pub line: usize,
+    pub placeholders: &'static [&'static str],
+    pub exception: Option<&'static str>,
+    pub regex: &'static str,
+}
+
+impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
+    fn from(value: &LoggingStatementWithPathPrefix) -> Self {
+        LoggingStatement {
+            level: value.level,
+            path: value.path,
+            line: value.line,
+            placeholders: value.placeholders,
+            exception: value.exception,
+            regex: value.regex,
+        }
     }
 }
 
-struct LoggingMessage<'a> {
-    message: &'a LoggingStatement,
+impl Display for LoggingStatementWithPathPrefix {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(exception) = self.exception {
+            write!(
+                f,
+                "{}({}): {}{} line {}",
+                exception,
+                self.message(),
+                self.path_prefix,
+                self.path,
+                self.line
+            )
+        } else {
+            write!(
+                f,
+                "{}: {}{} line {}",
+                self.message(),
+                self.path_prefix,
+                self.path,
+                self.line
+            )
+        }
+    }
 }
 
-impl<'a> Display for LoggingMessage<'a> {
+impl LoggingStatementWithPathPrefix {
+    pub fn message(&self) -> impl Display + '_ {
+        LoggingMessage {
+            message: self.into(),
+        }
+    }
+}
+
+struct LoggingMessage {
+    message: LoggingStatement,
+}
+
+impl Display for LoggingMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.message.regex.is_empty() {
             return Ok(());

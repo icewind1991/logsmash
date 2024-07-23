@@ -10,8 +10,9 @@
   mode ? "json",
 }: let
   ext = if mode == "rust" then "rs" else "json";
+  cleanedMajor = builtins.replaceStrings ["."] ["_"] major;
 in stdenvNoCC.mkDerivation rec {
-  pname = "extractor-logs-${name}-${major}";
+  pname = "extractor-logs-${name}-${cleanedMajor}";
   inherit version;
 
   src = fetchzip {
@@ -26,6 +27,6 @@ in stdenvNoCC.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out
-    cp logs.* $out/${name}_${major}.${ext}
+    cp logs.* $out/${name}_${cleanedMajor}.${ext}
   '';
 }

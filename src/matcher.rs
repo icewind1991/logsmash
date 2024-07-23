@@ -1,5 +1,5 @@
 use crate::logline::LogLine;
-use cloud_log_analyser_data::{LogLevel, LoggingStatement};
+use cloud_log_analyser_data::{LogLevel, LoggingStatement, StatementList};
 use regex::Regex;
 use std::fmt::{Display, Formatter};
 
@@ -34,7 +34,7 @@ pub struct Matcher {
 }
 
 impl Matcher {
-    pub fn new(statements: &[LoggingStatement]) -> Matcher {
+    pub fn new(statements: &StatementList) -> Matcher {
         Matcher {
             matches: statements.iter().map(LogMatch::new).collect(),
         }
@@ -90,7 +90,7 @@ pub enum MatchResult {
 }
 
 impl MatchResult {
-    pub fn display<'a>(&'a self, log_statements: &'a [LoggingStatement]) -> impl Display + 'a {
+    pub fn display<'a>(&'a self, log_statements: &'a StatementList) -> impl Display + 'a {
         MatchResultDisplay {
             log_statements,
             result: &self,
@@ -99,7 +99,7 @@ impl MatchResult {
 }
 
 struct MatchResultDisplay<'a> {
-    log_statements: &'a [LoggingStatement],
+    log_statements: &'a StatementList,
     result: &'a MatchResult,
 }
 
@@ -130,7 +130,7 @@ impl Display for MatchResultDisplay<'_> {
 fn test_matcher() {
     use crate::logline::Exception;
 
-    let statements = &[
+    const STATEMENTS: &[LoggingStatement] = &[
         LoggingStatement {
             line: 68,
             level: LogLevel::Exception,
@@ -169,32 +169,35 @@ fn test_matcher() {
             path: "short",
             placeholders: &["$path"],
             regex: "^Not allowed to rename (.*)$",
-            exception: "Bar\\FooException".into(),
+            exception: Some("Bar\\FooException"),
         },
     ];
-    let matcher = Matcher::new(statements);
+    let matcher = Matcher::new(&StatementList::new(vec![("", STATEMENTS)]));
     assert_eq!(
-        Some(0),
+        Some(MatchResult::Single(0)),
         matcher.match_log(&LogLine {
             version: "29",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename a shared album".into(),
             exception: None,
         })
     );
     assert_eq!(
-        Some(3),
+        Some(MatchResult::List(vec![3, 4])),
         matcher.match_log(&LogLine {
             version: "29",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename an album".into(),
             exception: None,
         })
     );
     assert_eq!(
-        Some(1),
+        Some(MatchResult::Single(1)),
         matcher.match_log(&LogLine {
             version: "29",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
@@ -204,16 +207,18 @@ fn test_matcher() {
         None,
         matcher.match_log(&LogLine {
             version: "29",
+            app: "core".into(),
             level: LogLevel::Info,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
         })
     );
     assert_eq!(
-        Some(2),
+        Some(MatchResult::Single(2)),
         matcher.match_log(
             &LogLine {
                 version: "29",
+                app: "core".into(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: None,
@@ -221,10 +226,11 @@ fn test_matcher() {
         )
     );
     assert_eq!(
-        Some(4),
+        Some(MatchResult::Single(4)),
         matcher.match_log(
             &LogLine {
                 version: "29",
+                app: "core".into(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: Some(Exception {

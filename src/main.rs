@@ -32,11 +32,8 @@ fn main() -> MainResult {
     let first = lines.next().unwrap();
     let first_parsed: LogLine = serde_json::from_str(&first).unwrap();
 
-    let statements = get_statements(
-        "server",
-        first_parsed.major_version().unwrap_or(MAX_VERSION),
-    );
-    let matcher = Matcher::new(statements);
+    let statements = get_statements(first_parsed.major_version().unwrap_or(MAX_VERSION));
+    let matcher = Matcher::new(&statements);
 
     let lines = once(first).chain(lines);
     let mut error_count = 0;
@@ -67,7 +64,7 @@ fn main() -> MainResult {
     counts.sort_by_key(|(_, count)| *count);
     counts.reverse();
     for (match_result, count) in counts {
-        println!("{}: {}", match_result.display(statements), count);
+        println!("{}: {}", match_result.display(&statements), count);
     }
     if unmatched_total > 0 {
         eprintln!("\n{unmatched_total} lines couldn't be matched:");
