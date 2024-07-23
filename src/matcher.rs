@@ -1,6 +1,7 @@
 use crate::logline::LogLine;
 use cloud_log_analyser_data::{LogLevel, LoggingStatement};
 use regex::Regex;
+use std::fmt::{Display, Formatter};
 
 pub struct LogMatch {
     level: LogLevel,
@@ -39,7 +40,7 @@ impl Matcher {
         }
     }
 
-    pub fn match_log(&self, log: &LogLine) -> Option<usize> {
+    pub fn match_log(&self, log: &LogLine) -> Option<MatchResult> {
         let mut best_match = None;
         let mut best_length = 0;
 
@@ -49,7 +50,7 @@ impl Matcher {
                     && log_match.exception.as_deref() == Some(exception.exception.as_ref())
                     && log_match.path == exception.file.as_ref()
                 {
-                    return Some(i);
+                    return Some(MatchResult::Single(i));
                 }
             }
         }
@@ -58,10 +59,20 @@ impl Matcher {
             if log_match.has_meaningful_message {
                 if log.level.matches(log_match.level)
                     && log_match.pattern.is_match(log.message.as_ref())
-                    && log_match.pattern_length > best_length
+                    && log_match.pattern_length >= best_length
                 {
-                    best_match = Some(i);
-                    best_length = log_match.pattern_length;
+                    if log_match.pattern_length > best_length {
+                        best_match = None;
+                        best_length = log_match.pattern_length;
+                    }
+                    best_match = Some(match best_match {
+                        Some(MatchResult::Single(res)) => MatchResult::List(vec![res, i]),
+                        Some(MatchResult::List(mut list)) => {
+                            list.push(i);
+                            MatchResult::List(list)
+                        }
+                        None => MatchResult::Single(i),
+                    });
                 }
             }
         }
@@ -69,6 +80,49 @@ impl Matcher {
         // todo: handle translated log messages
 
         best_match
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum MatchResult {
+    Single(usize),
+    List(Vec<usize>),
+}
+
+impl MatchResult {
+    pub fn display<'a>(&'a self, log_statements: &'a [LoggingStatement]) -> impl Display + 'a {
+        MatchResultDisplay {
+            log_statements,
+            result: &self,
+        }
+    }
+}
+
+struct MatchResultDisplay<'a> {
+    log_statements: &'a [LoggingStatement],
+    result: &'a MatchResult,
+}
+
+impl Display for MatchResultDisplay<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self.result {
+            MatchResult::Single(index) => {
+                if let Some(statement) = self.log_statements.get(*index) {
+                    write!(f, "{statement}")
+                } else {
+                    write!(f, "unknown statement")
+                }
+            }
+            MatchResult::List(list) => {
+                writeln!(f, "{} possible matches:", list.len())?;
+                for index in list {
+                    if let Some(statement) = self.log_statements.get(*index) {
+                        writeln!(f, "  {statement}")?;
+                    }
+                }
+                write!(f, "    ")
+            }
+        }
     }
 }
 

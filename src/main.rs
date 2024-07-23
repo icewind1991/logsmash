@@ -1,7 +1,7 @@
 use crate::error::LogError;
 use crate::logfile::LogFile;
 use crate::logline::LogLine;
-use crate::matcher::Matcher;
+use crate::matcher::{MatchResult, Matcher};
 use clap::Parser;
 use cloud_log_analyser_data::{get_statements, MAX_VERSION};
 use main_error::MainResult;
@@ -28,7 +28,7 @@ fn main() -> MainResult {
     })?;
     let mut lines = log_file.iter();
 
-    let mut counts: HashMap<usize, usize> = HashMap::new();
+    let mut counts: HashMap<MatchResult, usize> = HashMap::new();
     let first = lines.next().unwrap();
     let first_parsed: LogLine = serde_json::from_str(&first).unwrap();
 
@@ -66,26 +66,8 @@ fn main() -> MainResult {
     let mut counts: Vec<(_, _)> = counts.into_iter().collect();
     counts.sort_by_key(|(_, count)| *count);
     counts.reverse();
-    for (index, count) in counts {
-        let statement = &statements[index];
-        if let Some(exception) = statement.exception {
-            println!(
-                "{}({}): {} line {}: {}",
-                exception,
-                statement.message(),
-                statement.path,
-                statement.line,
-                count
-            );
-        } else {
-            println!(
-                "{}: {} line {}: {}",
-                statement.message(),
-                statement.path,
-                statement.line,
-                count
-            );
-        }
+    for (match_result, count) in counts {
+        println!("{}: {}", match_result.display(statements), count);
     }
     if unmatched_total > 0 {
         eprintln!("\n{unmatched_total} lines couldn't be matched:");

@@ -46,6 +46,23 @@ pub struct LoggingStatement {
     pub regex: &'static str,
 }
 
+impl Display for LoggingStatement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(exception) = self.exception {
+            write!(
+                f,
+                "{}({}): {} line {}",
+                exception,
+                self.message(),
+                self.path,
+                self.line
+            )
+        } else {
+            write!(f, "{}: {} line {}", self.message(), self.path, self.line)
+        }
+    }
+}
+
 impl LoggingStatement {
     pub fn message(&self) -> impl Display + '_ {
         LoggingMessage { message: &self }
