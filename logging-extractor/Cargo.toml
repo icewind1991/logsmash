@@ -27,5 +27,6 @@ regex = "1.10.5"
 cc = "1.1.6"
 
 [dev-dependencies]
+maplit = "1.0.2"
 test-case = "3.3.1"
 insta = { version = "1.39.0", features = ["json"] }

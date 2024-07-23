@@ -1,4 +1,5 @@
 use crate::messagebuilder::MessageBuilder;
+use crate::name_resolver::resolve_name;
 use crate::{LogLevel, LoggingStatement};
 use std::collections::HashMap;
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
@@ -8,6 +9,7 @@ pub struct LogExtractor {
     method_query: Query,
     throw_query: Query,
     use_query: Query,
+    namespace_query: Query,
 }
 
 impl LogExtractor {
@@ -39,11 +41,19 @@ impl LogExtractor {
             )"#,
         )
         .expect("invalid query");
+        let namespace_query = Query::new(
+            &language,
+            r#"(namespace_definition
+                name: (namespace_name) @name
+            )"#,
+        )
+        .expect("invalid query");
         LogExtractor {
             language,
             method_query,
             throw_query,
             use_query,
+            namespace_query,
         }
     }
 
@@ -64,10 +74,12 @@ impl LogExtractor {
         let mut log_call_cursor = QueryCursor::new();
         let mut throw_call_cursor = QueryCursor::new();
 
-        let aliases = self.get_aliases(&mut log_call_cursor, code, tree.root_node());
+        let root = tree.root_node();
+        let aliases = self.get_aliases(&mut log_call_cursor, code, root);
+        let namespace = self.get_namespace(&mut log_call_cursor, code, root);
 
-        let log_calls = self.get_log_calls(&mut log_call_cursor, code, tree.root_node());
-        let throw_calls = self.get_throw_calls(&mut throw_call_cursor, code, tree.root_node());
+        let log_calls = self.get_log_calls(&mut log_call_cursor, code, root);
+        let throw_calls = self.get_throw_calls(&mut throw_call_cursor, code, root);
         let mut all = log_calls
             .chain(throw_calls)
             .filter_map(|call| {
@@ -78,13 +90,9 @@ impl LogExtractor {
                     message_builder.push_node(argument, code);
                 }
 
-                let exception = call.exception.map(|exception| {
-                    aliases
-                        .get(exception.as_str())
-                        .copied()
-                        .map(String::from)
-                        .unwrap_or(exception)
-                });
+                let exception = call
+                    .exception
+                    .map(|exception| resolve_name(namespace, &aliases, exception.as_str()));
 
                 Some(LoggingStatement {
                     level: call.level,
@@ -184,6 +192,25 @@ impl LogExtractor {
             })
             .collect()
     }
+
+    fn get_namespace<'a>(
+        &'a self,
+        cursor: &mut QueryCursor,
+        code: &'a str,
+        node: Node<'a>,
+    ) -> &'a str {
+        let mut namespace = cursor.matches(&self.namespace_query, node, code.as_bytes());
+
+        namespace
+            .next()
+            .map(|namespace| {
+                namespace.captures[0]
+                    .node
+                    .utf8_text(code.as_bytes())
+                    .unwrap()
+            })
+            .unwrap_or("")
+    }
 }
 
 impl Default for LogExtractor {
@@ -204,14 +231,19 @@ fn test_extract_logging() {
     use crate::MessagePart;
 
     let code = r#"<?php
+      namespace Test;
       use Bar\BarException;
       use \Foo\Exception as FooException;
+      use Foo\Asd;
       function test() {
         $this->logger->warning("failed to find trash item for $rootTrashedItemName deleted at $rootTrashedItemDate in folder $groupFolderId", ['app' => 'groupfolders']);
         $logger->info('foobar');
         throw new FooException("foo \"bar\" \' {$this->blarg}");
         throw new BarException();
         $this->logger->error('Share notification mail could not be sent to: ' . implode(', ', $failedRecipients));
+        throw new Asd\Exception();
+        throw new SomeException();
+        throw new \SomeException();
       }
     ?>
     "#;
@@ -221,7 +253,7 @@ fn test_extract_logging() {
         logs[0],
         LoggingStatement {
             path: "foo.php",
-            line: 5,
+            line: 7,
             level: LogLevel::Warn,
             has_meaningful_message: true,
             exception: None,
@@ -239,7 +271,7 @@ fn test_extract_logging() {
         logs[1],
         LoggingStatement {
             path: "foo.php",
-            line: 6,
+            line: 8,
             level: LogLevel::Info,
             has_meaningful_message: true,
             exception: None,
@@ -250,7 +282,7 @@ fn test_extract_logging() {
         logs[2],
         LoggingStatement {
             path: "foo.php",
-            line: 7,
+            line: 9,
             level: LogLevel::Exception,
             has_meaningful_message: true,
             exception: Some("Foo\\Exception".into()),
@@ -264,7 +296,7 @@ fn test_extract_logging() {
         logs[3],
         LoggingStatement {
             path: "foo.php",
-            line: 8,
+            line: 10,
             level: LogLevel::Exception,
             has_meaningful_message: false,
             exception: Some("Bar\\BarException".into()),
@@ -275,7 +307,7 @@ fn test_extract_logging() {
         logs[4],
         LoggingStatement {
             path: "foo.php",
-            line: 9,
+            line: 11,
             level: LogLevel::Error,
             has_meaningful_message: true,
             exception: None,
@@ -283,6 +315,39 @@ fn test_extract_logging() {
                 MessagePart::Literal("Share notification mail could not be sent to: ".into()),
                 MessagePart::PlaceHolder("implode(', ', $failedRecipients)".into())
             ]
+        }
+    );
+    assert_eq!(
+        logs[5],
+        LoggingStatement {
+            path: "foo.php",
+            line: 12,
+            level: LogLevel::Exception,
+            has_meaningful_message: false,
+            exception: Some("Foo\\Asd\\Exception".into()),
+            message_parts: vec![]
+        }
+    );
+    assert_eq!(
+        logs[6],
+        LoggingStatement {
+            path: "foo.php",
+            line: 13,
+            level: LogLevel::Exception,
+            has_meaningful_message: false,
+            exception: Some("Test\\SomeException".into()),
+            message_parts: vec![]
+        }
+    );
+    assert_eq!(
+        logs[7],
+        LoggingStatement {
+            path: "foo.php",
+            line: 14,
+            level: LogLevel::Exception,
+            has_meaningful_message: false,
+            exception: Some("SomeException".into()),
+            message_parts: vec![]
         }
     );
 }

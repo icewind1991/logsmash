@@ -11,6 +11,7 @@ pub mod error;
 pub mod extractor;
 mod level;
 mod messagebuilder;
+mod name_resolver;
 pub mod string;
 
 use crate::bake::bake_statement;

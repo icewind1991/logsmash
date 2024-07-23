@@ -8,7 +8,7 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 129,
     "has_meaningful_message": true,
-    "exception": "\\Exception",
+    "exception": "Exception",
     "message_parts": [
       {
         "literal": "invalid share type!"
@@ -116,7 +116,7 @@ expression: output
     "path": "/DefaultShareProvider.php",
     "line": 609,
     "has_meaningful_message": true,
-    "exception": "\\Exception",
+    "exception": "Exception",
     "message_parts": [
       {
         "literal": "non-shallow getSharesInFolder is no longer supported"
