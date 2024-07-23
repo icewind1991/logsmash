@@ -24,7 +24,6 @@ impl From<i64> for LogLevel {
             1 => Self::Info,
             2 => Self::Warn,
             3 => Self::Error,
-            4 => Self::Critical,
             _ => Self::Unknown,
         }
     }
@@ -32,6 +31,11 @@ impl From<i64> for LogLevel {
 
 impl LogLevel {
     pub fn matches(&self, matcher_level: LogLevel) -> bool {
+        let matcher_level = match matcher_level {
+            LogLevel::Notice => LogLevel::Info,
+            LogLevel::Alert | LogLevel::Critical | LogLevel::Emergency => LogLevel::Error,
+            _ => matcher_level
+        };
         matcher_level == *self || matcher_level == LogLevel::Exception || *self == LogLevel::Unknown
     }
 }
