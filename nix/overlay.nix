@@ -6,7 +6,7 @@ final: prev: let
   allPackages = importJSON ./versions.json;
   packages = {
     server = {"29" = allPackages.server."29";};
-    inherit (allPackages) files_accesscontrol files_antivirus;
+    inherit (allPackages) files_accesscontrol files_antivirus deck;
   };
 
   loggingFor = mode: name:

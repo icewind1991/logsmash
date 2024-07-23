@@ -48,7 +48,7 @@ impl Matcher {
             for (i, log_match) in self.matches.iter().enumerate() {
                 if log_match.line == exception.line
                     && log_match.exception.as_deref() == Some(exception.exception.as_ref())
-                    && log_match.path == exception.file.as_ref()
+                    && exception.file.as_ref().ends_with(log_match.path)
                 {
                     return Some(MatchResult::Single(i));
                 }

@@ -17,6 +17,8 @@ mod matcher;
 #[derive(Debug, Parser)]
 struct Args {
     file: String,
+    #[arg(long)]
+    unmatched: bool,
 }
 
 fn main() -> MainResult {
@@ -38,7 +40,7 @@ fn main() -> MainResult {
     let lines = once(first).chain(lines);
     let mut error_count = 0;
     let mut unmatched_total = 0;
-    let mut unmatched = HashMap::new();
+    let mut unmatched_counts = HashMap::new();
     for line in lines {
         if line.starts_with('{') {
             let parsed = match serde_json::from_str::<LogLine>(&line) {
@@ -51,15 +53,23 @@ fn main() -> MainResult {
             if let Some(index) = matcher.match_log(&parsed) {
                 counts.entry(index).or_default().add_assign(1);
             } else {
+                if args.unmatched && parsed.app != "PHP" {
+                    println!("{} :{:?}", parsed.message, &parsed.exception);
+                }
                 unmatched_total += 1;
-                if let Some(entry) = unmatched.get_mut(parsed.app.as_ref()) {
+                if let Some(entry) = unmatched_counts.get_mut(parsed.app.as_ref()) {
                     *entry += 1;
                 } else {
-                    unmatched.insert(parsed.app.to_string(), 1);
+                    unmatched_counts.insert(parsed.app.to_string(), 1);
                 }
             }
         }
     }
+
+    if args.unmatched {
+        return Ok(());
+    }
+
     let mut counts: Vec<(_, _)> = counts.into_iter().collect();
     counts.sort_by_key(|(_, count)| *count);
     counts.reverse();
@@ -68,7 +78,7 @@ fn main() -> MainResult {
     }
     if unmatched_total > 0 {
         eprintln!("\n{unmatched_total} lines couldn't be matched:");
-        for (app, count) in unmatched {
+        for (app, count) in unmatched_counts {
             eprintln!("\t{app}: {count}");
         }
     }

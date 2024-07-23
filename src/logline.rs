@@ -22,7 +22,7 @@ impl LogLine<'_> {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Exception<'a> {
     pub exception: Cow<'a, str>,
