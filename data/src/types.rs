@@ -94,36 +94,63 @@ impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
     }
 }
 
-impl Display for LoggingStatementWithPathPrefix {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Some(exception) = self.exception {
-            write!(
-                f,
-                "{}({}): {}{} line {}",
-                exception,
-                self.message(),
-                self.path_prefix,
-                self.path,
-                self.line
-            )
-        } else {
-            write!(
-                f,
-                "{}: {}{} line {}",
-                self.message(),
-                self.path_prefix,
-                self.path,
-                self.line
-            )
+impl LoggingStatementWithPathPrefix {
+    fn raw_message(&self) -> LoggingMessage {
+        LoggingMessage {
+            message: self.into(),
+        }
+    }
+
+    pub fn path(&self) -> impl Display {
+        LoggingStatementPath {
+            path_prefix: self.path_prefix,
+            path: self.path,
+        }
+    }
+
+    pub fn message(&self) -> impl Display {
+        LoggingStatementMessage {
+            message: self.raw_message(),
+            exception: self.exception,
         }
     }
 }
 
-impl LoggingStatementWithPathPrefix {
-    pub fn message(&self) -> impl Display + '_ {
-        LoggingMessage {
-            message: self.into(),
+struct LoggingStatementPath {
+    pub path_prefix: &'static str,
+    pub path: &'static str,
+}
+
+impl Display for LoggingStatementPath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.path_prefix, self.path,)
+    }
+}
+
+struct LoggingStatementMessage {
+    pub message: LoggingMessage,
+    pub exception: Option<&'static str>,
+}
+
+impl Display for LoggingStatementMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(exception) = self.exception {
+            write!(f, "«{}({})»", exception, self.message)
+        } else {
+            write!(f, "«{}»", self.message)
         }
+    }
+}
+
+impl Display for LoggingStatementWithPathPrefix {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "«{}» {} line {}",
+            self.raw_message(),
+            self.path(),
+            self.line
+        )
     }
 }
 

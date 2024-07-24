@@ -2,3 +2,4 @@ target
 .direnv
 .env
 result
+*.log

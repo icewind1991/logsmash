@@ -1,7 +1,9 @@
+use crate::app::{App, LogMatch};
 use crate::error::LogError;
 use crate::logfile::LogFile;
 use crate::logline::LogLine;
 use crate::matcher::{MatchResult, Matcher};
+use crate::ui::run_ui;
 use clap::Parser;
 use cloud_log_analyser_data::{get_statements, MAX_VERSION};
 use main_error::MainResult;
@@ -9,10 +11,12 @@ use std::collections::HashMap;
 use std::iter::once;
 use std::ops::AddAssign;
 
+mod app;
 mod error;
 mod logfile;
 mod logline;
 mod matcher;
+mod ui;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -66,25 +70,19 @@ fn main() -> MainResult {
         }
     }
 
-    if args.unmatched {
-        return Ok(());
-    }
-
     let mut counts: Vec<(_, _)> = counts.into_iter().collect();
     counts.sort_by_key(|(_, count)| *count);
     counts.reverse();
-    for (match_result, count) in counts {
-        println!("{}: {}", match_result.display(&statements), count);
-    }
-    if unmatched_total > 0 {
-        eprintln!("\n{unmatched_total} lines couldn't be matched:");
-        for (app, count) in unmatched_counts {
-            eprintln!("\t{app}: {count}");
-        }
-    }
-    if error_count > 0 {
-        eprintln!("\n{error_count} lines failed to parse as valid log json");
-    }
+
+    let app = App {
+        log_statements: statements,
+        matches: counts
+            .into_iter()
+            .map(|(result, count)| LogMatch { result, count })
+            .collect(),
+    };
+
+    run_ui(app)?;
 
     Ok(())
 }

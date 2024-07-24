@@ -1,7 +1,9 @@
 use crate::logline::LogLine;
 use cloud_log_analyser_data::{LogLevel, LoggingStatement, StatementList};
+use itertools::Either;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
+use std::iter::once;
 
 pub struct LogMatch {
     level: LogLevel,
@@ -90,15 +92,35 @@ pub enum MatchResult {
 }
 
 impl MatchResult {
-    pub fn display<'a>(&'a self, log_statements: &'a StatementList) -> impl Display + 'a {
+    pub fn display<'a>(
+        &'a self,
+        log_statements: &'a StatementList,
+        max_length: usize,
+    ) -> impl Display + 'a {
         MatchResultDisplay {
+            max_length,
             log_statements,
             result: &self,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            MatchResult::Single(_) => 1,
+            MatchResult::List(list) => list.len(),
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+        match self {
+            MatchResult::Single(index) => Either::Left(once(*index)),
+            MatchResult::List(list) => Either::Right(list.iter().copied()),
         }
     }
 }
 
 struct MatchResultDisplay<'a> {
+    max_length: usize,
     log_statements: &'a StatementList,
     result: &'a MatchResult,
 }
@@ -110,17 +132,20 @@ impl Display for MatchResultDisplay<'_> {
                 if let Some(statement) = self.log_statements.get(*index) {
                     write!(f, "{statement}")
                 } else {
-                    write!(f, "unknown statement")
+                    write!(f, "«unknown statement»")
                 }
             }
             MatchResult::List(list) => {
-                writeln!(f, "{} possible matches:", list.len())?;
-                for index in list {
+                // todo: max length
+                for (i, index) in list.iter().enumerate() {
                     if let Some(statement) = self.log_statements.get(*index) {
-                        writeln!(f, "  {statement}")?;
+                        if i > 0 {
+                            write!(f, "  or ")?;
+                        }
+                        write!(f, "{statement}\n")?;
                     }
                 }
-                write!(f, "    ")
+                Ok(())
             }
         }
     }
