@@ -35,7 +35,13 @@ fn main() -> MainResult {
 
     let mut counts: HashMap<MatchResult, Vec<usize>> = HashMap::new();
     let first = lines.next().unwrap();
-    let first_parsed: LogLine = serde_json::from_str(&first).unwrap();
+    let first_parsed: LogLine = match serde_json::from_str(&first) {
+        Ok(first_parsed) => first_parsed,
+        Err(e) => {
+            eprintln!("Failed to parse the first line in the log: {:#}", e);
+            return Ok(());
+        }
+    };
 
     let statements = get_statements(first_parsed.major_version().unwrap_or(MAX_VERSION));
     let matcher = Matcher::new(&statements);

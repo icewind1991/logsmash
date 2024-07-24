@@ -1,14 +1,17 @@
 use cloud_log_analyser_data::LogLevel;
 use serde::Deserialize;
+use time::OffsetDateTime;
 use tinystr::TinyAsciiStr;
 
 #[derive(Deserialize)]
 pub struct LogLine {
-    pub version: TinyAsciiStr<8>,
+    pub version: TinyAsciiStr<16>,
     pub level: LogLevel,
     pub message: String,
     pub exception: Option<Exception>,
-    pub app: TinyAsciiStr<16>,
+    pub app: TinyAsciiStr<32>,
+    #[serde(with = "time::serde::iso8601")]
+    pub time: OffsetDateTime,
 }
 
 impl LogLine {
