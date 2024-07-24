@@ -16,6 +16,7 @@ cloud-log-analyser-data = { version = "0.1.0", path = "./data" }
 zip = "2.1.5"
 itertools = "0.13.0"
 ratatui = "0.27.0"
+tinystr = { version = "0.7.6", features = ["serde"] }
 
 [profile.dev.package."*"]
 opt-level = 3

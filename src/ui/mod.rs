@@ -1,6 +1,8 @@
 use crate::app::App;
 use crate::error::UiError;
+use crate::ui::footer::footer;
 use crate::ui::match_list::match_list;
+use crate::ui::single_match::single_match;
 use crate::ui::state::{UiEvent, UiState};
 use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::crossterm::terminal::{
@@ -12,8 +14,11 @@ use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
 
+mod footer;
 mod match_list;
+mod single_match;
 mod state;
+pub mod style;
 
 pub fn run_ui(app: App) -> Result<(), UiError> {
     enable_raw_mode()?;
@@ -46,6 +51,7 @@ fn handle_events() -> io::Result<Option<UiEvent>> {
                     KeyCode::Esc => Some(UiEvent::Back),
                     KeyCode::Down => Some(UiEvent::Down),
                     KeyCode::Up => Some(UiEvent::Up),
+                    KeyCode::Enter => Some(UiEvent::Select),
                     _ => None,
                 });
             }
@@ -55,10 +61,25 @@ fn handle_events() -> io::Result<Option<UiEvent>> {
 }
 
 fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
+    let page = state.page();
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(100), Constraint::Length(1)])
+        .split(frame.size());
+
     match state {
         UiState::Quit => {}
         UiState::MatchList { table_state } => {
-            frame.render_stateful_widget(match_list(app), frame.size(), table_state);
+            frame.render_stateful_widget(match_list(app), layout[0], table_state);
+            frame.render_widget(footer(app, page), layout[1]);
+        }
+        UiState::Match {
+            selected: index,
+            table_state,
+        } => {
+            let log_match = &app.matches[*index];
+            frame.render_stateful_widget(single_match(app, log_match), layout[0], table_state);
+            frame.render_widget(footer(app, page), layout[1]);
         }
     }
 }

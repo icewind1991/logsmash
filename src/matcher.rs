@@ -49,8 +49,8 @@ impl Matcher {
         if let Some(exception) = &log.exception {
             for (i, log_match) in self.matches.iter().enumerate() {
                 if log_match.line == exception.line
-                    && log_match.exception.as_deref() == Some(exception.exception.as_ref())
-                    && exception.file.as_ref().ends_with(log_match.path)
+                    && log_match.exception == Some(exception.exception.as_str())
+                    && exception.file.ends_with(log_match.path)
                 {
                     return Some(MatchResult::Single(i));
                 }
@@ -60,7 +60,7 @@ impl Matcher {
         for (i, log_match) in self.matches.iter().enumerate() {
             if log_match.has_meaningful_message {
                 if log.level.matches(log_match.level)
-                    && log_match.pattern.is_match(log.message.as_ref())
+                    && log_match.pattern.is_match(log.message.as_str())
                     && log_match.pattern_length >= best_length
                 {
                     if log_match.pattern_length > best_length {

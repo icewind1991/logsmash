@@ -38,6 +38,21 @@ impl LogLevel {
         };
         matcher_level == *self || matcher_level == LogLevel::Exception || *self == LogLevel::Unknown
     }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            LogLevel::Debug => "debug",
+            LogLevel::Info => "info",
+            LogLevel::Notice => "notice",
+            LogLevel::Warn => "warn",
+            LogLevel::Error => "error",
+            LogLevel::Alert => "alert",
+            LogLevel::Critical => "critical",
+            LogLevel::Emergency => "emergency",
+            LogLevel::Exception => "exception",
+            LogLevel::Unknown => "log",
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
