@@ -65,7 +65,7 @@
         ];
         releaseTargets = lib.lists.remove hostTarget targets;
 
-        src = sourceByRegex ./. ["Cargo.*" "(src)(/.*)?"];
+        src = sourceByRegex ./. ["Cargo.*" "(src|data)(/.*)?"];
         extractorSrc = sourceByRegex ./logging-extractor ["Cargo.*" "(src)(/.*)?"];
         nearskOpt = {
           pname = "cloud-log-analyser";
@@ -76,30 +76,20 @@
           lib.attrsets.genAttrs targets (target:
             (cross-naersk'.buildPackage target) nearskOpt)
           // {
-            inherit (pkgs) logging-extractor extracted-logs extracted-logs-rust;
-            check = naersk'.buildPackage (nearskOpt
+            inherit (pkgs) logging-extractor extracted-logs extracted-logs-rust logsmash;
+            check = msrvNaersk.buildPackage (nearskOpt
               // {
                 mode = "check";
               });
-            extractorCheck = naersk'.buildPackage (nearskOpt
+            extractor = msrvNaersk.buildPackage (nearskOpt
               // {
-                mode = "check";
                 root = extractorSrc;
               });
-            clippy = naersk'.buildPackage (nearskOpt
+            clippy = msrvNaersk.buildPackage (nearskOpt
               // {
                 mode = "clippy";
               });
-            msrv = msrvNaersk.buildPackage (nearskOpt
-              // {
-                mode = "check";
-              });
-            extractorMsrv = extractorMsrvNaersk.buildPackage (nearskOpt
-              // {
-                mode = "check";
-                root = extractorSrc;
-              });
-            default = pkgs.shelve;
+            default = pkgs.logsmash;
           };
         apps.default = packages.default;
 

@@ -26,4 +26,5 @@ in {
     name = "extracted-logs";
     paths = flatten (map attrValues (attrValues final.extracted-logs-parts-rust));
   };
+  logsmash = final.callPackage ./package.nix {};
 }
