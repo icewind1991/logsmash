@@ -30,6 +30,7 @@ pub fn footer(app: &App, page: UiPage) -> Table {
 fn help(page: UiPage) -> &'static str {
     match page {
         UiPage::MatchList => "«Q» Exit - «Enter» Select",
-        UiPage::Match => "«Q» Exit - «Esc» Back",
+        UiPage::Match => "«Q» Exit - «Enter» Select - «Esc» Back",
+        UiPage::Logs => "«Q» Exit - «Esc» Back",
     }
 }

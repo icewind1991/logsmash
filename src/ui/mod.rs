@@ -3,6 +3,7 @@ use crate::error::UiError;
 use crate::ui::footer::footer;
 use crate::ui::histogram::UiHistogram;
 use crate::ui::match_list::match_list;
+use crate::ui::raw_logs::raw_logs;
 use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{UiEvent, UiState};
 use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
@@ -18,6 +19,7 @@ use std::io::stdout;
 mod footer;
 mod histogram;
 mod match_list;
+mod raw_logs;
 mod single_match;
 mod state;
 pub mod style;
@@ -99,6 +101,16 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             let selected_group = &result.grouped[table_state.selected().unwrap_or_default()];
             frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
             frame.render_stateful_widget(grouped_lines(app, result), layout[1], table_state);
+            frame.render_widget(footer(app, page), layout[2]);
+        }
+        UiState::Logs {
+            lines, table_state, ..
+        } => {
+            frame.render_stateful_widget(
+                raw_logs(app, lines),
+                layout[0].union(layout[1]),
+                table_state,
+            );
             frame.render_widget(footer(app, page), layout[2]);
         }
     }

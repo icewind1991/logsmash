@@ -12,6 +12,11 @@ pub enum UiState<'a> {
         table_state: TableState,
         previous: Box<UiState<'a>>,
     },
+    Logs {
+        lines: &'a [usize],
+        table_state: TableState,
+        previous: Box<UiState<'a>>,
+    },
     Quit,
 }
 
@@ -28,6 +33,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::Quit | UiState::MatchList { .. } => UiPage::MatchList,
             UiState::Match { .. } => UiPage::Match,
+            UiState::Logs { .. } => UiPage::Logs,
         }
     }
 
@@ -35,6 +41,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList { table_state } => Some(table_state),
             UiState::Match { table_state, .. } => Some(table_state),
+            UiState::Logs { table_state, .. } => Some(table_state),
             UiState::Quit => None,
         }
     }
@@ -43,6 +50,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList { .. } => app.match_lines(),
             UiState::Match { result, .. } => result.grouped.len(),
+            UiState::Logs { lines, .. } => lines.len(),
             UiState::Quit => 0,
         }
     }
@@ -66,8 +74,13 @@ impl<'a> UiState<'a> {
                 }
                 state
             }
-            (mut prev @ UiState::MatchList { .. }, UiEvent::Select) => {
-                let selected = prev.table_state().unwrap().selected().unwrap_or(0);
+            (
+                UiState::MatchList {
+                    table_state: prev_state,
+                },
+                UiEvent::Select,
+            ) => {
+                let selected = prev_state.selected().unwrap_or(0);
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
 
@@ -81,10 +94,37 @@ impl<'a> UiState<'a> {
                 UiState::Match {
                     result,
                     table_state,
-                    previous: Box::new(prev),
+                    previous: Box::new(UiState::MatchList {
+                        table_state: prev_state,
+                    }),
                 }
             }
-            (UiState::Match { previous, .. }, UiEvent::Back) => *previous,
+            (
+                UiState::Match {
+                    table_state: prev_state,
+                    previous,
+                    result,
+                },
+                UiEvent::Select,
+            ) => {
+                let selected = prev_state.selected().unwrap_or(0);
+                let mut table_state = TableState::default();
+                table_state.select(Some(0));
+
+                let lines = result.grouped[selected].lines.as_slice();
+                UiState::Logs {
+                    lines,
+                    table_state,
+                    previous: Box::new(UiState::Match {
+                        table_state: prev_state,
+                        previous,
+                        result,
+                    }),
+                }
+            }
+            (UiState::Match { previous, .. } | UiState::Logs { previous, .. }, UiEvent::Back) => {
+                *previous
+            }
             (state, _) => state,
         }
     }
@@ -101,6 +141,7 @@ pub enum UiEvent {
 pub enum UiPage {
     MatchList,
     Match,
+    Logs,
 }
 
 mod table_state {
