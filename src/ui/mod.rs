@@ -92,29 +92,13 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             frame.render_widget(footer(app, page), layout[2]);
         }
         UiState::Match {
-            selected: index,
+            result,
             table_state,
+            ..
         } => {
-            let log_match = &app.matches[*index];
-            let selected_group = &log_match.grouped[table_state.selected().unwrap_or_default()];
+            let selected_group = &result.grouped[table_state.selected().unwrap_or_default()];
             frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
-            frame.render_stateful_widget(grouped_lines(app, log_match), layout[1], table_state);
-            frame.render_widget(footer(app, page), layout[2]);
-        }
-        UiState::All { table_state } => {
-            let selected_group = &app.all.grouped[table_state.selected().unwrap_or_default()];
-            frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
-            frame.render_stateful_widget(grouped_lines(app, &app.all), layout[1], table_state);
-            frame.render_widget(footer(app, page), layout[2]);
-        }
-        UiState::Unmatched { table_state } => {
-            let selected_group = &app.unmatched.grouped[table_state.selected().unwrap_or_default()];
-            frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
-            frame.render_stateful_widget(
-                grouped_lines(app, &app.unmatched),
-                layout[1],
-                table_state,
-            );
+            frame.render_stateful_widget(grouped_lines(app, result), layout[1], table_state);
             frame.render_widget(footer(app, page), layout[2]);
         }
     }

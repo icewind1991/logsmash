@@ -1,26 +1,21 @@
-use crate::app::App;
+use crate::app::{App, LogMatch};
 use ratatui::widgets::TableState;
 use table_state::TableStateExt;
 
-#[derive(Clone, Debug)]
-pub enum UiState {
+#[derive(Clone)]
+pub enum UiState<'a> {
     MatchList {
         table_state: TableState,
     },
     Match {
-        selected: usize,
+        result: &'a LogMatch,
         table_state: TableState,
-    },
-    All {
-        table_state: TableState,
-    },
-    Unmatched {
-        table_state: TableState,
+        previous: Box<UiState<'a>>,
     },
     Quit,
 }
 
-impl Default for UiState {
+impl Default for UiState<'_> {
     fn default() -> Self {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
@@ -28,13 +23,11 @@ impl Default for UiState {
     }
 }
 
-impl UiState {
+impl<'a> UiState<'a> {
     pub fn page(&self) -> UiPage {
         match self {
             UiState::Quit | UiState::MatchList { .. } => UiPage::MatchList,
             UiState::Match { .. } => UiPage::Match,
-            UiState::All { .. } => UiPage::All,
-            UiState::Unmatched { .. } => UiPage::Unmatched,
         }
     }
 
@@ -42,8 +35,6 @@ impl UiState {
         match self {
             UiState::MatchList { table_state } => Some(table_state),
             UiState::Match { table_state, .. } => Some(table_state),
-            UiState::All { table_state } => Some(table_state),
-            UiState::Unmatched { table_state } => Some(table_state),
             UiState::Quit => None,
         }
     }
@@ -51,14 +42,12 @@ impl UiState {
     fn table_count(&self, app: &App) -> usize {
         match self {
             UiState::MatchList { .. } => app.match_lines(),
-            UiState::Match { selected, .. } => app.matches[*selected].grouped.len(),
-            UiState::All { .. } => app.all.grouped.len(),
-            UiState::Unmatched { .. } => app.unmatched.grouped.len(),
+            UiState::Match { result, .. } => result.grouped.len(),
             UiState::Quit => 0,
         }
     }
 
-    pub fn process(self, event: UiEvent, app: &App) -> UiState {
+    pub fn process(self, event: UiEvent, app: &'a App) -> UiState {
         match (self, event) {
             (UiState::Quit, _) => UiState::Quit,
             (_, UiEvent::Quit) => UiState::Quit,
@@ -77,41 +66,25 @@ impl UiState {
                 }
                 state
             }
-            (UiState::MatchList { table_state }, UiEvent::Select) => {
-                let selected = table_state.selected().unwrap_or(0);
+            (mut prev @ UiState::MatchList { .. }, UiEvent::Select) => {
+                let selected = prev.table_state().unwrap().selected().unwrap_or(0);
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
-                if selected == 0 {
-                    UiState::All { table_state }
+
+                let result = if selected == 0 {
+                    &app.all
                 } else if selected == app.match_lines() - 1 {
-                    UiState::Unmatched { table_state }
+                    &app.unmatched
                 } else {
-                    UiState::Match {
-                        selected: selected - 1,
-                        table_state,
-                    }
+                    &app.matches[selected - 1]
+                };
+                UiState::Match {
+                    result,
+                    table_state,
+                    previous: Box::new(prev),
                 }
             }
-            (
-                UiState::Match {
-                    selected: index, ..
-                },
-                UiEvent::Back,
-            ) => {
-                let mut table_state = TableState::default();
-                table_state.select(Some(index + 1));
-                UiState::MatchList { table_state }
-            }
-            (UiState::All { .. }, UiEvent::Back) => {
-                let mut table_state = TableState::default();
-                table_state.select(Some(0));
-                UiState::MatchList { table_state }
-            }
-            (UiState::Unmatched { .. }, UiEvent::Back) => {
-                let mut table_state = TableState::default();
-                table_state.select(Some(app.match_lines() - 1));
-                UiState::MatchList { table_state }
-            }
+            (UiState::Match { previous, .. }, UiEvent::Back) => *previous,
             (state, _) => state,
         }
     }
@@ -128,8 +101,6 @@ pub enum UiEvent {
 pub enum UiPage {
     MatchList,
     Match,
-    All,
-    Unmatched,
 }
 
 mod table_state {
