@@ -58,24 +58,23 @@ impl Matcher {
         }
 
         for (i, log_match) in self.matches.iter().enumerate() {
-            if log_match.has_meaningful_message {
-                if log.level.matches(log_match.level)
-                    && log_match.pattern.is_match(log.message.as_str())
-                    && log_match.pattern_length >= best_length
-                {
-                    if log_match.pattern_length > best_length {
-                        best_match = None;
-                        best_length = log_match.pattern_length;
-                    }
-                    best_match = Some(match best_match {
-                        Some(MatchResult::Single(res)) => MatchResult::List(vec![res, i]),
-                        Some(MatchResult::List(mut list)) => {
-                            list.push(i);
-                            MatchResult::List(list)
-                        }
-                        None => MatchResult::Single(i),
-                    });
+            if log_match.has_meaningful_message
+                && log.level.matches(log_match.level)
+                && log_match.pattern.is_match(log.message.as_str())
+                && log_match.pattern_length >= best_length
+            {
+                if log_match.pattern_length > best_length {
+                    best_match = None;
+                    best_length = log_match.pattern_length;
                 }
+                best_match = Some(match best_match {
+                    Some(MatchResult::Single(res)) => MatchResult::List(vec![res, i]),
+                    Some(MatchResult::List(mut list)) => {
+                        list.push(i);
+                        MatchResult::List(list)
+                    }
+                    None => MatchResult::Single(i),
+                });
             }
         }
 
@@ -129,7 +128,7 @@ impl Display for MatchResultDisplay<'_> {
                         if i > 0 {
                             write!(f, "  or ")?;
                         }
-                        write!(f, "{statement}\n")?;
+                        writeln!(f, "{statement}")?;
                     }
                 }
                 Ok(())

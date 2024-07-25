@@ -26,7 +26,7 @@ pub fn raw_logs(app: &App, lines: &[usize]) -> Table<'static> {
         Constraint::Percentage(100),
         Constraint::Length(27),
     ];
-    let table = Table::new(lines.map(|line| log_row(line)), widths)
+    let table = Table::new(lines.map(log_row), widths)
         .header(header)
         .highlight_style(TABLE_SELECTED_STYLE)
         .highlight_spacing(HighlightSpacing::Always);

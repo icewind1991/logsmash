@@ -29,11 +29,11 @@ pub fn match_list(app: &App) -> Table {
         Constraint::Min(10),
     ];
 
-    let all = log_row(&app.all, &app, "All lines");
+    let all = log_row(&app.all, app, "All lines");
     let unmatched = if app.unmatched.lines.is_empty() {
         Either::Right(empty())
     } else {
-        Either::Left(once(log_row(&app.unmatched, &app, "Unmatched lines")))
+        Either::Left(once(log_row(&app.unmatched, app, "Unmatched lines")))
     };
 
     Table::new(
