@@ -201,34 +201,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cloud-log-analyser"
-version = "0.1.0"
-dependencies = [
- "ahash",
- "clap",
- "cloud-log-analyser-data",
- "hdrhistogram",
- "itertools",
- "log",
- "main_error",
- "ratatui",
- "regex",
- "serde",
- "serde_json",
- "thiserror",
- "time",
- "tinystr",
- "zip",
-]
-
-[[package]]
-name = "cloud-log-analyser-data"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "compact_str"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -554,6 +526,34 @@ name = "log"
 version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
+
+[[package]]
+name = "logsmash"
+version = "0.1.0"
+dependencies = [
+ "ahash",
+ "clap",
+ "hdrhistogram",
+ "itertools",
+ "log",
+ "logsmash-data",
+ "main_error",
+ "ratatui",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "tinystr",
+ "zip",
+]
+
+[[package]]
+name = "logsmash-data"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "lru"

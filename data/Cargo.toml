@@ -1,6 +1,6 @@
 [package]
-name = "cloud-log-analyser-data"
-description = "static data for cloud-log-analyser"
+name = "logsmash-data"
+description = "static data for logsmash"
 version = "0.1.0"
 edition = "2021"
 

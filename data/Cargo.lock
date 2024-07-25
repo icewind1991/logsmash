@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "cloud-log-analyser-data"
+name = "logsmash-data"
 version = "0.1.0"
 dependencies = [
  "serde",

@@ -1,7 +1,7 @@
 use crate::logline::LogLine;
 use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
-use cloud_log_analyser_data::StatementList;
+use logsmash_data::StatementList;
 use std::collections::BTreeMap;
 use time::OffsetDateTime;
 

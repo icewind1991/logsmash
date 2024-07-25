@@ -1,5 +1,5 @@
 use ahash::AHasher;
-use cloud_log_analyser_data::LogLevel;
+use logsmash_data::LogLevel;
 use serde::Deserialize;
 use std::hash::{Hash, Hasher};
 use time::OffsetDateTime;

@@ -1,6 +1,6 @@
 use crate::logline::LogLine;
-use cloud_log_analyser_data::{LogLevel, LoggingStatement, StatementList};
 use itertools::Either;
+use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use regex::Regex;
 use std::fmt::{Display, Formatter};
 use std::iter::once;

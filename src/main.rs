@@ -5,7 +5,7 @@ use crate::logline::LogLine;
 use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use clap::Parser;
-use cloud_log_analyser_data::{get_statements, MAX_VERSION};
+use logsmash_data::{get_statements, MAX_VERSION};
 use main_error::MainResult;
 use std::collections::HashMap;
 use std::iter::once;

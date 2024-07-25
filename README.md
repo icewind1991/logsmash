@@ -1,4 +1,14 @@
-# cloud-log-analyser
+# logsmash_data
+
+Analysis tool for Nextcloud logs files
+
+![Logsmash screenshot](./screenshots/screenshot.png)
+
+## Usage
+
+```bash
+logsmash ./logfile.log
+```
 
 ### Updating baked data
 
