@@ -92,18 +92,6 @@ pub enum MatchResult {
 }
 
 impl MatchResult {
-    pub fn display<'a>(
-        &'a self,
-        log_statements: &'a StatementList,
-        max_length: usize,
-    ) -> impl Display + 'a {
-        MatchResultDisplay {
-            max_length,
-            log_statements,
-            result: &self,
-        }
-    }
-
     pub fn len(&self) -> usize {
         match self {
             MatchResult::Single(_) => 1,
@@ -120,7 +108,6 @@ impl MatchResult {
 }
 
 struct MatchResultDisplay<'a> {
-    max_length: usize,
     log_statements: &'a StatementList,
     result: &'a MatchResult,
 }
@@ -154,6 +141,8 @@ impl Display for MatchResultDisplay<'_> {
 #[test]
 fn test_matcher() {
     use crate::logline::Exception;
+    use time::OffsetDateTime;
+    use tinystr::TinyAsciiStr;
 
     const STATEMENTS: &[LoggingStatement] = &[
         LoggingStatement {
@@ -201,52 +190,57 @@ fn test_matcher() {
     assert_eq!(
         Some(MatchResult::Single(0)),
         matcher.match_log(&LogLine {
-            version: "29",
-            app: "core".into(),
+            version: TinyAsciiStr::from_str("29").unwrap(),
+            app: TinyAsciiStr::from_str("core").unwrap(),
             level: LogLevel::Error,
             message: "Not allowed to rename a shared album".into(),
             exception: None,
+            time: OffsetDateTime::now_utc(),
         })
     );
     assert_eq!(
         Some(MatchResult::List(vec![3, 4])),
         matcher.match_log(&LogLine {
-            version: "29",
-            app: "core".into(),
+            version: TinyAsciiStr::from_str("29").unwrap(),
+            app: TinyAsciiStr::from_str("core").unwrap(),
             level: LogLevel::Error,
             message: "Not allowed to rename an album".into(),
             exception: None,
+            time: OffsetDateTime::now_utc(),
         })
     );
     assert_eq!(
         Some(MatchResult::Single(1)),
         matcher.match_log(&LogLine {
-            version: "29",
-            app: "core".into(),
+            version: TinyAsciiStr::from_str("29").unwrap(),
+            app: TinyAsciiStr::from_str("core").unwrap(),
             level: LogLevel::Error,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
+            time: OffsetDateTime::now_utc(),
         })
     );
     assert_eq!(
         None,
         matcher.match_log(&LogLine {
-            version: "29",
-            app: "core".into(),
+            version: TinyAsciiStr::from_str("29").unwrap(),
+            app: TinyAsciiStr::from_str("core").unwrap(),
             level: LogLevel::Info,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
+            time: OffsetDateTime::now_utc(),
         })
     );
     assert_eq!(
         Some(MatchResult::Single(2)),
         matcher.match_log(
             &LogLine {
-                version: "29",
-                app: "core".into(),
+                version: TinyAsciiStr::from_str("29").unwrap(),
+                app: TinyAsciiStr::from_str("core").unwrap(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: None,
+                time: OffsetDateTime::now_utc(),
             }
         )
     );
@@ -254,8 +248,8 @@ fn test_matcher() {
         Some(MatchResult::Single(4)),
         matcher.match_log(
             &LogLine {
-                version: "29",
-                app: "core".into(),
+                version: TinyAsciiStr::from_str("29").unwrap(),
+                app: TinyAsciiStr::from_str("core").unwrap(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: Some(Exception {
@@ -264,6 +258,7 @@ fn test_matcher() {
                     line: 68,
                     previous: None,
                 }),
+                time: OffsetDateTime::now_utc(),
             }
         )
     );

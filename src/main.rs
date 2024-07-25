@@ -1,8 +1,9 @@
-use crate::app::{App, LogMatch, UnMatched};
+use crate::app::{App, LogMatch};
 use crate::error::LogError;
 use crate::logfile::LogFile;
 use crate::logline::LogLine;
 use crate::matcher::{MatchResult, Matcher};
+use crate::timegraph::TimeGraph;
 use crate::ui::run_ui;
 use clap::Parser;
 use cloud_log_analyser_data::{get_statements, MAX_VERSION};
@@ -15,6 +16,7 @@ mod error;
 mod logfile;
 mod logline;
 mod matcher;
+mod timegraph;
 mod ui;
 
 #[derive(Debug, Parser)]
@@ -49,7 +51,8 @@ fn main() -> MainResult {
     let lines = once(first).chain(lines);
     let mut error_count = 0;
     let mut unmatched_counts: HashMap<String, Vec<usize>> = HashMap::new();
-    let mut parsed_lines = Vec::new();
+    let mut parsed_lines = Vec::with_capacity(1024);
+    let mut unmatched_lines = Vec::with_capacity(256);
     let mut i = 0;
     for line in lines {
         if line.starts_with('{') {
@@ -69,7 +72,7 @@ fn main() -> MainResult {
                 if let Some(entry) = unmatched_counts.get_mut(parsed.app.as_str()) {
                     entry.push(i)
                 } else {
-                    unmatched_counts.insert(parsed.app.to_string(), vec![i]);
+                    unmatched_lines.push(i);
                 }
             }
             parsed_lines.push(parsed);
@@ -81,21 +84,27 @@ fn main() -> MainResult {
     matched_lines.sort_by_key(|(_, lines)| lines.len());
     matched_lines.reverse();
 
-    let mut unmatched_lines: Vec<(_, _)> = unmatched_counts.into_iter().collect();
-    unmatched_lines.sort_by_key(|(_, lines)| lines.len());
-    unmatched_lines.reverse();
+    let histogram = TimeGraph::generate(&parsed_lines);
+
+    let matches = matched_lines
+        .into_iter()
+        .map(|(result, lines)| LogMatch::new(result, lines, &parsed_lines))
+        .collect();
+
+    let min_time = parsed_lines[0].time;
+    let max_time = parsed_lines.last().unwrap().time;
+    let mut unmatched_histogram = TimeGraph::new(min_time, max_time);
+    for lines in unmatched_lines.iter().map(|line| &parsed_lines[*line]) {
+        unmatched_histogram.add(lines.time);
+    }
 
     let app = App {
         lines: parsed_lines,
+        histogram,
         log_statements: statements,
-        matches: matched_lines
-            .into_iter()
-            .map(|(result, lines)| LogMatch { result, lines })
-            .collect(),
-        unmatched: unmatched_lines
-            .into_iter()
-            .map(|(app, lines)| UnMatched { app, lines })
-            .collect(),
+        matches,
+        unmatched: unmatched_lines,
+        unmatched_histogram,
         error_count,
     };
 

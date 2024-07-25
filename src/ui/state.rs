@@ -11,6 +11,12 @@ pub enum UiState {
         selected: usize,
         table_state: TableState,
     },
+    All {
+        table_state: TableState,
+    },
+    Unmatched {
+        table_state: TableState,
+    },
     Quit,
 }
 
@@ -27,6 +33,28 @@ impl UiState {
         match self {
             UiState::Quit | UiState::MatchList { .. } => UiPage::MatchList,
             UiState::Match { .. } => UiPage::Match,
+            UiState::All { .. } => UiPage::All,
+            UiState::Unmatched { .. } => UiPage::Unmatched,
+        }
+    }
+
+    fn table_state(&mut self) -> Option<&mut TableState> {
+        match self {
+            UiState::MatchList { table_state } => Some(table_state),
+            UiState::Match { table_state, .. } => Some(table_state),
+            UiState::All { table_state } => Some(table_state),
+            UiState::Unmatched { table_state } => Some(table_state),
+            UiState::Quit => None,
+        }
+    }
+
+    fn table_count(&self, app: &App) -> usize {
+        match self {
+            UiState::MatchList { .. } => app.match_lines(),
+            UiState::Match { selected, .. } => app.matches[*selected].count(),
+            UiState::All { .. } => app.lines.len(),
+            UiState::Unmatched { .. } => app.unmatched.len(),
+            UiState::Quit => 0,
         }
     }
 
@@ -35,21 +63,33 @@ impl UiState {
             (UiState::Quit, _) => UiState::Quit,
             (_, UiEvent::Quit) => UiState::Quit,
             (UiState::MatchList { .. }, UiEvent::Back) => UiState::Quit,
-            (UiState::MatchList { mut table_state }, UiEvent::Down) => {
-                table_state.down(app.matches.len());
-                UiState::MatchList { table_state }
+            (mut state, UiEvent::Down(step)) => {
+                let count = state.table_count(app);
+                if let Some(table_state) = state.table_state() {
+                    table_state.down(count, step)
+                }
+                state
             }
-            (UiState::MatchList { mut table_state }, UiEvent::Up) => {
-                table_state.up(app.matches.len());
-                UiState::MatchList { table_state }
+            (mut state, UiEvent::Up(step)) => {
+                let count = state.table_count(app);
+                if let Some(table_state) = state.table_state() {
+                    table_state.up(count, step)
+                }
+                state
             }
             (UiState::MatchList { table_state }, UiEvent::Select) => {
                 let selected = table_state.selected().unwrap_or(0);
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
-                UiState::Match {
-                    selected,
-                    table_state,
+                if selected == 0 {
+                    UiState::All { table_state }
+                } else if selected == app.match_lines() - 1 {
+                    UiState::Unmatched { table_state }
+                } else {
+                    UiState::Match {
+                        selected: selected - 1,
+                        table_state,
+                    }
                 }
             }
             (
@@ -59,36 +99,20 @@ impl UiState {
                 UiEvent::Back,
             ) => {
                 let mut table_state = TableState::default();
-                table_state.select(Some(index));
+                table_state.select(Some(index + 1));
                 UiState::MatchList { table_state }
             }
-            (
-                UiState::Match {
-                    mut table_state,
-                    selected,
-                },
-                UiEvent::Down,
-            ) => {
-                table_state.down(app.matches[selected].count());
-                UiState::Match {
-                    table_state,
-                    selected,
-                }
+            (UiState::All { .. }, UiEvent::Back) => {
+                let mut table_state = TableState::default();
+                table_state.select(Some(0));
+                UiState::MatchList { table_state }
             }
-            (
-                UiState::Match {
-                    mut table_state,
-                    selected,
-                },
-                UiEvent::Up,
-            ) => {
-                table_state.up(app.matches[selected].count());
-                UiState::Match {
-                    table_state,
-                    selected,
-                }
+            (UiState::Unmatched { .. }, UiEvent::Back) => {
+                let mut table_state = TableState::default();
+                table_state.select(Some(app.match_lines() - 1));
+                UiState::MatchList { table_state }
             }
-            (state @ UiState::Match { .. }, _) => state,
+            (state, _) => state,
         }
     }
 }
@@ -96,33 +120,45 @@ impl UiState {
 pub enum UiEvent {
     Quit,
     Back,
-    Up,
-    Down,
+    Up(usize),
+    Down(usize),
     Select,
 }
 
 pub enum UiPage {
     MatchList,
     Match,
+    All,
+    Unmatched,
 }
 
 mod table_state {
     use ratatui::widgets::TableState;
 
     pub trait TableStateExt {
-        fn up(&mut self, count: usize);
-        fn down(&mut self, count: usize);
+        fn up(&mut self, count: usize, step: usize);
+        fn down(&mut self, count: usize, step: usize);
     }
 
     impl TableStateExt for TableState {
-        fn up(&mut self, count: usize) {
+        fn up(&mut self, count: usize, step: usize) {
             let current = self.selected().unwrap_or(0);
-            self.select(Some(if current == 0 { count - 1 } else { current - 1 }))
+            let after = if step > current {
+                count - 1
+            } else {
+                current - step
+            };
+            self.select(Some(after))
         }
 
-        fn down(&mut self, count: usize) {
+        fn down(&mut self, count: usize, step: usize) {
             let current = self.selected().unwrap_or(0);
-            self.select(Some((current + 1).rem_euclid(count)))
+            let after = if step >= count - current {
+                0
+            } else {
+                current + step
+            };
+            self.select(Some(after))
         }
     }
 }

@@ -18,6 +18,7 @@ itertools = "0.13.0"
 ratatui = "0.27.0"
 tinystr = { version = "0.7.6", features = ["serde"] }
 time = { version = "0.3.36", features = ["serde", "serde-well-known"] }
+hdrhistogram = "7.5.4"
 
 [profile.dev.package."*"]
 opt-level = 3

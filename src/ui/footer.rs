@@ -19,13 +19,7 @@ pub fn footer(app: &App, page: UiPage) -> Table {
     Table::new(
         [Row::new([
             help(page).to_string(),
-            format!(
-                "{} unmatched items",
-                app.unmatched
-                    .iter()
-                    .map(|unmatched| unmatched.count())
-                    .sum::<usize>()
-            ),
+            format!("{} unmatched items", app.unmatched.len()),
             format!("{} parse errors", app.error_count),
         ])],
         widths,
@@ -36,6 +30,6 @@ pub fn footer(app: &App, page: UiPage) -> Table {
 fn help(page: UiPage) -> &'static str {
     match page {
         UiPage::MatchList => "«Q» Exit - «Enter» Select",
-        UiPage::Match => "«Q» Exit - «Esc» Back",
+        UiPage::Match | UiPage::All | UiPage::Unmatched => "«Q» Exit - «Esc» Back",
     }
 }

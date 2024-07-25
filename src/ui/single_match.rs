@@ -1,13 +1,10 @@
-use crate::app::{App, LogMatch};
 use crate::logline::LogLine;
 use crate::ui::style::{TABLE_HEADER_STYLE, TABLE_SELECTED_STYLE, TIME_FORMAT};
 use ratatui::layout::Constraint;
 use ratatui::widgets::{Cell, HighlightSpacing, Row, Table};
 use time::format_description::well_known::Iso8601;
 
-pub fn single_match<'a>(app: &'a App, matches: &'a LogMatch) -> Table<'a> {
-    let lines = matches.lines.iter().map(|i| &app.lines[*i]);
-
+pub fn grouped_lines<'a, I: Iterator<Item = &'a LogLine> + 'a>(lines: I) -> Table<'a> {
     let header = ["Level", "App", "Message", "Date"]
         .into_iter()
         .map(Cell::from)
