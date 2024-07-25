@@ -1,34 +1,38 @@
 use crate::app::{App, LogMatch};
-use ratatui::widgets::TableState;
+use ratatui::widgets::{ScrollbarState, TableState};
 use table_state::TableStateExt;
 
 #[derive(Clone)]
 pub enum UiState<'a> {
     MatchList {
         table_state: TableState,
+        scroll_state: ScrollbarState,
     },
     Match {
         result: &'a LogMatch,
         table_state: TableState,
+        scroll_state: ScrollbarState,
         previous: Box<UiState<'a>>,
     },
     Logs {
         lines: &'a [usize],
         table_state: TableState,
+        scroll_state: ScrollbarState,
         previous: Box<UiState<'a>>,
     },
     Quit,
 }
 
-impl Default for UiState<'_> {
-    fn default() -> Self {
+impl<'a> UiState<'a> {
+    pub fn new(app: &App) -> Self {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
-        UiState::MatchList { table_state }
+        UiState::MatchList {
+            table_state,
+            scroll_state: ScrollbarState::new(app.match_lines()),
+        }
     }
-}
 
-impl<'a> UiState<'a> {
     pub fn page(&self) -> UiPage {
         match self {
             UiState::Quit | UiState::MatchList { .. } => UiPage::MatchList,
@@ -39,9 +43,18 @@ impl<'a> UiState<'a> {
 
     fn table_state(&mut self) -> Option<&mut TableState> {
         match self {
-            UiState::MatchList { table_state } => Some(table_state),
+            UiState::MatchList { table_state, .. } => Some(table_state),
             UiState::Match { table_state, .. } => Some(table_state),
             UiState::Logs { table_state, .. } => Some(table_state),
+            UiState::Quit => None,
+        }
+    }
+
+    fn scroll_state(&mut self) -> Option<&mut ScrollbarState> {
+        match self {
+            UiState::MatchList { scroll_state, .. } => Some(scroll_state),
+            UiState::Match { scroll_state, .. } => Some(scroll_state),
+            UiState::Logs { scroll_state, .. } => Some(scroll_state),
             UiState::Quit => None,
         }
     }
@@ -63,20 +76,25 @@ impl<'a> UiState<'a> {
             (mut state, UiEvent::Down(step)) => {
                 let count = state.table_count(app);
                 if let Some(table_state) = state.table_state() {
-                    table_state.down(count, step)
+                    let pos = table_state.down(count, step);
+                    let scroll_state = state.scroll_state().unwrap();
+                    *scroll_state = scroll_state.position(pos);
                 }
                 state
             }
             (mut state, UiEvent::Up(step)) => {
                 let count = state.table_count(app);
                 if let Some(table_state) = state.table_state() {
-                    table_state.up(count, step)
+                    let pos = table_state.up(count, step);
+                    let scroll_state = state.scroll_state().unwrap();
+                    *scroll_state = scroll_state.position(pos);
                 }
                 state
             }
             (
                 UiState::MatchList {
                     table_state: prev_state,
+                    scroll_state: prev_scroll,
                 },
                 UiEvent::Select,
             ) => {
@@ -94,14 +112,17 @@ impl<'a> UiState<'a> {
                 UiState::Match {
                     result,
                     table_state,
+                    scroll_state: ScrollbarState::new(result.count()),
                     previous: Box::new(UiState::MatchList {
                         table_state: prev_state,
+                        scroll_state: prev_scroll,
                     }),
                 }
             }
             (
                 UiState::Match {
                     table_state: prev_state,
+                    scroll_state: prev_scroll,
                     previous,
                     result,
                 },
@@ -115,8 +136,10 @@ impl<'a> UiState<'a> {
                 UiState::Logs {
                     lines,
                     table_state,
+                    scroll_state: ScrollbarState::new(lines.len()),
                     previous: Box::new(UiState::Match {
                         table_state: prev_state,
+                        scroll_state: prev_scroll,
                         previous,
                         result,
                     }),
@@ -148,29 +171,31 @@ mod table_state {
     use ratatui::widgets::TableState;
 
     pub trait TableStateExt {
-        fn up(&mut self, count: usize, step: usize);
-        fn down(&mut self, count: usize, step: usize);
+        fn up(&mut self, count: usize, step: usize) -> usize;
+        fn down(&mut self, count: usize, step: usize) -> usize;
     }
 
     impl TableStateExt for TableState {
-        fn up(&mut self, count: usize, step: usize) {
+        fn up(&mut self, count: usize, step: usize) -> usize {
             let current = self.selected().unwrap_or(0);
             let after = if step > current {
                 count - 1
             } else {
                 current - step
             };
-            self.select(Some(after))
+            self.select(Some(after));
+            after
         }
 
-        fn down(&mut self, count: usize, step: usize) {
+        fn down(&mut self, count: usize, step: usize) -> usize {
             let current = self.selected().unwrap_or(0);
             let after = if step >= count - current {
                 0
             } else {
                 current + step
             };
-            self.select(Some(after))
+            self.select(Some(after));
+            after
         }
     }
 }
