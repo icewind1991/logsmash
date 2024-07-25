@@ -19,7 +19,7 @@ pub fn footer(app: &App, page: UiPage) -> Table {
     Table::new(
         [Row::new([
             help(page).to_string(),
-            format!("{} unmatched items", app.unmatched.len()),
+            format!("{} unmatched items", app.unmatched.lines.len()),
             format!("{} parse errors", app.error_count),
         ])],
         widths,

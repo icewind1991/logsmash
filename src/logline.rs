@@ -1,5 +1,7 @@
+use ahash::AHasher;
 use cloud_log_analyser_data::LogLevel;
 use serde::Deserialize;
+use std::hash::{Hash, Hasher};
 use time::OffsetDateTime;
 use tinystr::TinyAsciiStr;
 
@@ -22,6 +24,18 @@ impl LogLine {
             .map(|(major, _)| major)
             .unwrap_or(self.version.as_str());
         major.parse().ok()
+    }
+
+    pub fn index(&self) -> u64 {
+        let mut hasher = AHasher::default();
+        self.message.hash(&mut hasher);
+        self.level.hash(&mut hasher);
+        self.exception
+            .as_ref()
+            .map(|e| e.exception.as_str())
+            .hash(&mut hasher);
+        self.app.hash(&mut hasher);
+        hasher.finish()
     }
 }
 

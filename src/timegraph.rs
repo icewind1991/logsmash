@@ -1,4 +1,3 @@
-use crate::logline::LogLine;
 use hdrhistogram::Histogram;
 use time::OffsetDateTime;
 
@@ -21,17 +20,6 @@ impl TimeGraph {
             start: start.unix_timestamp() as u64,
             end: end.unix_timestamp() as u64,
         }
-    }
-
-    pub fn generate(lines: &[LogLine]) -> Self {
-        let min_time = lines[0].time;
-        let max_time = lines.last().unwrap().time;
-        let mut histogram = TimeGraph::new(min_time, max_time);
-
-        for line in lines {
-            histogram.add(line.time);
-        }
-        histogram
     }
 
     pub fn add(&mut self, time: OffsetDateTime) {

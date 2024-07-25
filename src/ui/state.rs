@@ -51,9 +51,9 @@ impl UiState {
     fn table_count(&self, app: &App) -> usize {
         match self {
             UiState::MatchList { .. } => app.match_lines(),
-            UiState::Match { selected, .. } => app.matches[*selected].count(),
-            UiState::All { .. } => app.lines.len(),
-            UiState::Unmatched { .. } => app.unmatched.len(),
+            UiState::Match { selected, .. } => app.matches[*selected].grouped.len(),
+            UiState::All { .. } => app.all.grouped.len(),
+            UiState::Unmatched { .. } => app.unmatched.grouped.len(),
             UiState::Quit => 0,
         }
     }

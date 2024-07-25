@@ -29,28 +29,16 @@ pub fn match_list(app: &App) -> Table {
         Constraint::Min(10),
     ];
 
-    let all = Row::new([
-        Text::from("All lines"),
-        Text::from(String::new()),
-        Text::from(String::new()).alignment(Alignment::Right),
-        Text::from(sparkline(&app.histogram.counts(10))),
-        Text::from(app.lines.len().to_string()),
-    ]);
-    let unmatched = if app.unmatched.is_empty() {
+    let all = log_row(&app.all, &app, "All lines");
+    let unmatched = if app.unmatched.lines.is_empty() {
         Either::Right(empty())
     } else {
-        Either::Left(once(Row::new([
-            Text::from("Unmatched lines"),
-            Text::from(String::new()),
-            Text::from(String::new()).alignment(Alignment::Right),
-            Text::from(sparkline(&app.unmatched_histogram.counts(10))),
-            Text::from(app.unmatched.len().to_string()),
-        ])))
+        Either::Left(once(log_row(&app.unmatched, &app, "Unmatched lines")))
     };
 
     Table::new(
         once(all)
-            .chain(app.matches.iter().map(|result| log_row(result, app)))
+            .chain(app.matches.iter().map(|result| log_row(result, app, "")))
             .chain(unmatched),
         widths,
     )
@@ -59,22 +47,32 @@ pub fn match_list(app: &App) -> Table {
     .highlight_spacing(HighlightSpacing::Always)
 }
 
-fn log_row<'a>(result: &LogMatch, app: &'a App) -> Row<'a> {
-    let mut message = String::new();
-    let mut paths = String::new();
-    let mut lines = String::new();
-    for index in result.result.iter() {
-        let statement = app.log_statements.get(index).expect("invalid match index");
-        writeln!(&mut message, "{}", statement.message()).unwrap();
-        writeln!(&mut paths, "{}", statement.path()).unwrap();
-        writeln!(&mut lines, "{}", statement.line).unwrap();
+fn log_row<'a>(result: &LogMatch, app: &'a App, name: &'static str) -> Row<'a> {
+    if let Some(match_result) = &result.result {
+        let mut message = String::new();
+        let mut paths = String::new();
+        let mut lines = String::new();
+        for index in match_result.iter() {
+            let statement = app.log_statements.get(index).expect("invalid match index");
+            writeln!(&mut message, "{}", statement.message()).unwrap();
+            writeln!(&mut paths, "{}", statement.path()).unwrap();
+            writeln!(&mut lines, "{}", statement.line).unwrap();
+        }
+        Row::new([
+            Text::from(message),
+            Text::from(paths),
+            Text::from(lines).alignment(Alignment::Right),
+            Text::from(sparkline(&result.histogram.counts(10))),
+            Text::from(result.count().to_string()),
+        ])
+        .height(match_result.len() as u16)
+    } else {
+        Row::new([
+            Text::from(name),
+            Text::from(""),
+            Text::from(""),
+            Text::from(sparkline(&result.histogram.counts(10))),
+            Text::from(result.count().to_string()),
+        ])
     }
-    Row::new([
-        Text::from(message),
-        Text::from(paths),
-        Text::from(lines).alignment(Alignment::Right),
-        Text::from(sparkline(&result.histogram.counts(10))),
-        Text::from(result.count().to_string()),
-    ])
-    .height(result.result.len() as u16)
 }

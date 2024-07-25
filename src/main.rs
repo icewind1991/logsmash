@@ -3,7 +3,6 @@ use crate::error::LogError;
 use crate::logfile::LogFile;
 use crate::logline::LogLine;
 use crate::matcher::{MatchResult, Matcher};
-use crate::timegraph::TimeGraph;
 use crate::ui::run_ui;
 use clap::Parser;
 use cloud_log_analyser_data::{get_statements, MAX_VERSION};
@@ -84,27 +83,26 @@ fn main() -> MainResult {
     matched_lines.sort_by_key(|(_, lines)| lines.len());
     matched_lines.reverse();
 
-    let histogram = TimeGraph::generate(&parsed_lines);
+    let all = LogMatch::new(
+        None,
+        parsed_lines.iter().enumerate().map(|(i, _)| i).collect(),
+        &parsed_lines,
+    );
+    let unmatched = LogMatch::new(None, unmatched_lines, &parsed_lines);
 
     let matches = matched_lines
         .into_iter()
-        .map(|(result, lines)| LogMatch::new(result, lines, &parsed_lines))
+        .map(|(result, lines)| LogMatch::new(Some(result), lines, &parsed_lines))
         .collect();
 
-    let min_time = parsed_lines[0].time;
-    let max_time = parsed_lines.last().unwrap().time;
-    let mut unmatched_histogram = TimeGraph::new(min_time, max_time);
-    for lines in unmatched_lines.iter().map(|line| &parsed_lines[*line]) {
-        unmatched_histogram.add(lines.time);
-    }
-
     let app = App {
+        first_date: parsed_lines[0].time,
+        last_date: parsed_lines.last().unwrap().time,
         lines: parsed_lines,
-        histogram,
         log_statements: statements,
         matches,
-        unmatched: unmatched_lines,
-        unmatched_histogram,
+        unmatched,
+        all,
         error_count,
     };
 

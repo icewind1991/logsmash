@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Default, PartialEq, Clone, Copy, Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, Copy, Deserialize, Hash)]
 #[serde(from = "i64")]
 pub enum LogLevel {
     Debug,
