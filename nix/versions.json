@@ -35,21 +35,24 @@
     "1.19": {
       "version": "1.19.1",
       "url": "https://github.com/nextcloud-releases/files_accesscontrol/releases/download/v1.19.1/files_accesscontrol-v1.19.1.tar.gz",
-      "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80="
+      "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80=",
+      "prefix": "/apps/files_accesscontrol"
     }
   },
   "files_antivirus": {
     "5.5": {
       "version": "5.5.7",
       "url": "https://github.com/nextcloud-releases/files_antivirus/releases/download/v5.5.7/files_antivirus-v5.5.7.tar.gz",
-      "sha256": "sha256-Sg6AeqopaXrXrZ6loq+B5ZBjh2SHIflXaf6u/cIBqUo="
+      "sha256": "sha256-Sg6AeqopaXrXrZ6loq+B5ZBjh2SHIflXaf6u/cIBqUo=",
+      "prefix": "/apps/files_antivirus"
     }
   },
   "deck": {
     "1.13": {
       "version": "1.31.1",
       "url": "https://github.com/nextcloud-releases/deck/releases/download/v1.13.1/deck-v1.13.1.tar.gz",
-      "sha256": "sha256-AQV2JeSrQcPSh2J2oG/Kbrh2Qo/nj1+orYJymDsQLDQ="
+      "sha256": "sha256-AQV2JeSrQcPSh2J2oG/Kbrh2Qo/nj1+orYJymDsQLDQ=",
+      "prefix": "/apps/deck"
     }
   }
 }

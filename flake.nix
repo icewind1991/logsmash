@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-23.11";
+    nixpkgs.url = "nixpkgs/nixos-24.05";
     flake-utils.url = "github:numtide/flake-utils";
     naersk.url = "github:nix-community/naersk";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
@@ -76,7 +76,7 @@
           lib.attrsets.genAttrs targets (target:
             (cross-naersk'.buildPackage target) nearskOpt)
           // {
-            inherit (pkgs) logging-extractor extracted-logs extracted-logs-rust logsmash;
+            inherit (pkgs) logging-extractor extracted-logs extracted-logs-rust logsmash extracted-logs-rust-mod;
             check = msrvNaersk.buildPackage (nearskOpt
               // {
                 mode = "check";

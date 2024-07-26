@@ -17,15 +17,6 @@ pub struct LogLine {
 }
 
 impl LogLine {
-    pub fn major_version(&self) -> Option<u32> {
-        let major = self
-            .version
-            .split_once('.')
-            .map(|(major, _)| major)
-            .unwrap_or(self.version.as_str());
-        major.parse().ok()
-    }
-
     pub fn index(&self) -> u64 {
         let mut hasher = AHasher::default();
         self.message.hash(&mut hasher);

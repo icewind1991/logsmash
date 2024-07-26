@@ -18,13 +18,14 @@ in {
   logging-extractor = final.callPackage ./logging-extractor.nix {};
   extracted-logs-parts = mapAttrs (loggingFor "json") packages;
   extracted-logs-parts-rust = mapAttrs (loggingFor "rust") packages;
+  extracted-logs-rust-mod = final.callPackage ./data-mod.nix {inherit packages;};
   extracted-logs = symlinkJoin {
     name = "extracted-logs";
     paths = flatten (map attrValues (attrValues final.extracted-logs-parts));
   };
   extracted-logs-rust = symlinkJoin {
     name = "extracted-logs";
-    paths = flatten (map attrValues (attrValues final.extracted-logs-parts-rust));
+    paths = (flatten (map attrValues (attrValues final.extracted-logs-parts-rust))) ++ [final.extracted-logs-rust-mod];
   };
   logsmash = final.callPackage ./package.nix {};
 }

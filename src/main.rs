@@ -5,8 +5,9 @@ use crate::logline::LogLine;
 use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use clap::Parser;
-use logsmash_data::{get_statements, MAX_VERSION};
+use logsmash_data::{default_apps, get_statements, SourceDefinition};
 use main_error::MainResult;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::iter::once;
 
@@ -44,7 +45,14 @@ fn main() -> MainResult {
         }
     };
 
-    let statements = get_statements(first_parsed.major_version().unwrap_or(MAX_VERSION));
+    let server_version = first_parsed.version;
+    let statements = get_statements(
+        once(SourceDefinition {
+            name: "server",
+            version: Cow::Owned(server_version.to_string()),
+        })
+        .chain(default_apps()),
+    );
     let matcher = Matcher::new(&statements);
 
     let lines = once(first).chain(lines);
