@@ -2,7 +2,6 @@ use crate::logline::LogLine;
 use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use regex::Regex;
-use std::fmt::{Display, Formatter};
 use std::iter::once;
 
 pub struct LogMatch {
@@ -102,37 +101,6 @@ impl MatchResult {
         match self {
             MatchResult::Single(index) => Either::Left(once(*index)),
             MatchResult::List(list) => Either::Right(list.iter().copied()),
-        }
-    }
-}
-
-struct MatchResultDisplay<'a> {
-    log_statements: &'a StatementList,
-    result: &'a MatchResult,
-}
-
-impl Display for MatchResultDisplay<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self.result {
-            MatchResult::Single(index) => {
-                if let Some(statement) = self.log_statements.get(*index) {
-                    write!(f, "{statement}")
-                } else {
-                    write!(f, "«unknown statement»")
-                }
-            }
-            MatchResult::List(list) => {
-                // todo: max length
-                for (i, index) in list.iter().enumerate() {
-                    if let Some(statement) = self.log_statements.get(*index) {
-                        if i > 0 {
-                            write!(f, "  or ")?;
-                        }
-                        writeln!(f, "{statement}")?;
-                    }
-                }
-                Ok(())
-            }
         }
     }
 }
