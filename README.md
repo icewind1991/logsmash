@@ -31,10 +31,11 @@ If a log item cannot be matched to an origin it will added to the "Unmatched lin
 
 Currently, the program can match against data from the following sources:
 
-- Nextcloud server 29
+- Nextcloud server 24 - 29
 - files_accesscontrol 1.19.1
 - files_antivirus 5.5.7
 - deck: 1.13.1
+- calendar: 4.7.13
 
 ### Updating baked data
 

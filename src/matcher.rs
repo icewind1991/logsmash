@@ -252,6 +252,7 @@ fn test_matcher() {
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: Some(Exception {
+                    message: "".into(),
                     exception: "Bar\\FooException".into(),
                     file: "short".into(),
                     line: 68,

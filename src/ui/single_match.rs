@@ -40,7 +40,7 @@ fn group_row(app: &App, group: &GroupedLines) -> Row<'static> {
     Row::new([
         line.level.as_str().to_string(),
         line.app.to_string(),
-        line.message.clone(),
+        line.display(),
         sparkline(&group.histogram.counts(10)),
         group.len().to_string(),
     ])

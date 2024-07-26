@@ -179,7 +179,11 @@ mod table_state {
         fn up(&mut self, count: usize, step: usize) -> usize {
             let current = self.selected().unwrap_or(0);
             let after = if step > current {
-                count - 1
+                if step == 1 {
+                    count - 1
+                } else {
+                    0
+                }
             } else {
                 current - step
             };
@@ -190,7 +194,11 @@ mod table_state {
         fn down(&mut self, count: usize, step: usize) -> usize {
             let current = self.selected().unwrap_or(0);
             let after = if step >= count - current {
-                0
+                if step == 1 {
+                    0
+                } else {
+                    count - 1
+                }
             } else {
                 current + step
             };

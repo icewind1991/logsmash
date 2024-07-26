@@ -37,7 +37,7 @@ fn log_row(line: &LogLine) -> Row<'static> {
     Row::new([
         Text::from(line.level.as_str().to_string()),
         Text::from(line.app.to_string()),
-        Text::from(line.message.clone()),
+        Text::from(line.display()),
         Text::from(line.time.format(&Iso8601::<TIME_FORMAT>).unwrap()).alignment(Alignment::Right),
     ])
 }

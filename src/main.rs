@@ -22,8 +22,6 @@ mod ui;
 #[derive(Debug, Parser)]
 struct Args {
     file: String,
-    #[arg(long)]
-    unmatched: bool,
 }
 
 fn main() -> MainResult {
@@ -72,15 +70,10 @@ fn main() -> MainResult {
             };
             if let Some(index) = matcher.match_log(&parsed) {
                 counts.entry(index).or_default().push(i);
+            } else if let Some(entry) = unmatched_counts.get_mut(parsed.app.as_str()) {
+                entry.push(i)
             } else {
-                if args.unmatched && parsed.app != "PHP" {
-                    println!("{} :{:?}", parsed.message, &parsed.exception);
-                }
-                if let Some(entry) = unmatched_counts.get_mut(parsed.app.as_str()) {
-                    entry.push(i)
-                } else {
-                    unmatched_lines.push(i);
-                }
+                unmatched_lines.push(i);
             }
             parsed_lines.push(parsed);
             i += 1;
