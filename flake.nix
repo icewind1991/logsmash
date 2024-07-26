@@ -70,6 +70,12 @@
         nearskOpt = {
           pname = "cloud-log-analyser";
           root = src;
+
+          preBuild = ''
+            mkdir -p data/src/data
+            rm -r data/src/data
+            cp -r ${pkgs.extracted-logs-rust} data/src/data
+          '';
         };
       in rec {
         packages =

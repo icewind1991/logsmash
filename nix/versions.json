@@ -32,7 +32,7 @@
     }
   },
   "files_accesscontrol": {
-    "1.19": {
+    "1": {
       "version": "1.19.1",
       "url": "https://github.com/nextcloud-releases/files_accesscontrol/releases/download/v1.19.1/files_accesscontrol-v1.19.1.tar.gz",
       "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80=",
@@ -40,7 +40,7 @@
     }
   },
   "files_antivirus": {
-    "5.5": {
+    "5": {
       "version": "5.5.7",
       "url": "https://github.com/nextcloud-releases/files_antivirus/releases/download/v5.5.7/files_antivirus-v5.5.7.tar.gz",
       "sha256": "sha256-Sg6AeqopaXrXrZ6loq+B5ZBjh2SHIflXaf6u/cIBqUo=",
@@ -48,19 +48,155 @@
     }
   },
   "deck": {
-    "1.13": {
+    "1": {
       "version": "1.31.1",
       "url": "https://github.com/nextcloud-releases/deck/releases/download/v1.13.1/deck-v1.13.1.tar.gz",
       "sha256": "sha256-AQV2JeSrQcPSh2J2oG/Kbrh2Qo/nj1+orYJymDsQLDQ=",
       "prefix": "/apps/deck"
     }
   },
-  "calendar": {
-    "4.7": {
-      "version": "4.7.13",
-      "url": "https://github.com/nextcloud-releases/calendar/releases/download/v4.7.13/calendar-v4.7.13.tar.gz",
-      "sha256": "sha256-e+/gNl7xFDxgnxweBXt/et+iyaWsKXNGeto32StZNW8=",
-      "prefix": "/apps/calendar"
+  "contacts": {
+    "6": {
+      "version": "6.0.0",
+      "url": "https://github.com/nextcloud-releases/contacts/releases/download/v6.0.0/contacts-v6.0.0.tar.gz",
+      "sha256": "sha256-GfITU8ZnB5zK/ajo83dDqPKet/oQMo50y5V0dw4Zt3s=",
+      "prefix": "/apps/contacts"
+    },
+    "5": {
+      "version": "5.5.3",
+      "url": "https://github.com/nextcloud-releases/contacts/releases/download/v5.5.3/contacts-v5.5.3.tar.gz",
+      "sha256": "sha256-HCEjiAqn6sTNXKW6O5X6Ta9Ll4ehvzmGZUj1c0ue2Xc=",
+      "prefix": "/apps/contacts"
+    }
+  },
+  "groupfolders": {
+    "17": {
+      "version": "17.0.1",
+      "url": "https://github.com/nextcloud-releases/groupfolders/releases/download/v17.0.1/groupfolders-v17.0.1.tar.gz",
+      "sha256": "sha256-AqEZkId0Nk0EfsIme8fC+pQsz13d8LXRmEVm+FrUC2g=",
+      "prefix": "/apps/groupfolders"
+    },
+    "16": {
+      "version": "16.0.7",
+      "url": "https://github.com/nextcloud-releases/groupfolders/releases/download/v16.0.7/groupfolders-v16.0.7.tar.gz",
+      "sha256": "sha256-gaOCIqpNqFiWNcv52+mthGjI23Bj9todgOf2ZomskJ4=",
+      "prefix": "/apps/groupfolders"
+    }
+  },
+  "guests": {
+    "4": {
+      "version": "4.0.0",
+      "url": "https://github.com/nextcloud-releases/guests/releases/download/v4.0.0/guests-v4.0.0.tar.gz",
+      "sha256": "sha256-dM2BmckOGZpcFDVs2oYVDqPafyBtLFB3ZCcsnOflteM=",
+      "prefix": "/apps/guests"
+    },
+    "3": {
+      "version": "3.1.0",
+      "url": "https://github.com/nextcloud-releases/guests/releases/download/v3.1.0/guests-v3.1.0.tar.gz",
+      "sha256": "sha256-YpJWOOP/45Lnw6XlQ6PLitG2NzSyYXCD5D9lZyn+mcQ=",
+      "prefix": "/apps/guests"
+    }
+  },
+  "spreed": {
+    "19": {
+      "version": "19.0.7",
+      "url": "https://github.com/nextcloud-releases/spreed/releases/download/v19.0.7/spreed-v19.0.7.tar.gz",
+      "sha256": "sha256-Ab978xb8cwTmGRoA8JTw+IVbdvRb1F3ndeW5ljpisVU=",
+      "prefix": "/apps/spreed"
+    },
+    "18": {
+      "version": "18.0.10",
+      "url": "https://github.com/nextcloud-releases/spreed/releases/download/v18.0.10/spreed-v18.0.10.tar.gz",
+      "sha256": "sha256-D2xNlTpn/mw2uFqE9rzPjxC1YUbYgmHhOxGPfGIYumo=",
+      "prefix": "/apps/spreed"
+    }
+  },
+  "forms": {
+    "4": {
+      "version": "4.2.4",
+      "url": "https://github.com/nextcloud-releases/forms/releases/download/v4.2.4/forms-v4.2.4.tar.gz",
+      "sha256": "sha256-3ram5LduRgMmUWDRp65cvS9Dbhx7UnR7OllbEVQ+jMM=",
+      "prefix": "/apps/forms"
+    }
+  },
+  "tasks": {
+    "0": {
+      "version": "0.16.0",
+      "url": "https://github.com/nextcloud/tasks/releases/download/v0.16.0/tasks.tar.gz",
+      "sha256": "sha256-L68ughpLad4cr5utOPwefu2yoOgRvnJibqfKmarGXLw=",
+      "prefix": "/apps/tasks"
+    }
+  },
+  "notes": {
+    "4": {
+      "version": "4.10.1",
+      "url": "https://github.com/nextcloud-releases/notes/releases/download/v4.10.1/notes-v4.10.1.tar.gz",
+      "sha256": "sha256-A3QNWGWeC2OcZngMrh9NpYbU5qp5x9xiDcRfB9cRXBo=",
+      "prefix": "/apps/notes"
+    }
+  },
+  "richdocuments": {
+    "8": {
+      "version": "8.4.3",
+      "url": "https://github.com/nextcloud-releases/richdocuments/releases/download/v8.4.3/richdocuments-v8.4.3.tar.gz",
+      "sha256": "sha256-eoOBZGK7XQuP1ZxEcCSBQYe4bYf14/8OgtFOHUQnPXQ=",
+      "prefix": "/apps/richdocuments"
+    }
+  },
+  "collectives": {
+    "2": {
+      "version": "2.13.0",
+      "url": "https://github.com/nextcloud/collectives/releases/download/v2.13.0/collectives-2.13.0.tar.gz",
+      "sha256": "sha256-mFr0gyWdCCX2pAekj8ZEZfShYW0HtvdfbRfEt8kapkE=",
+      "prefix": "/apps/collectives"
+    }
+  },
+  "onlyoffice": {
+    "9": {
+      "version": "9.3.0",
+      "url": "https://github.com/ONLYOFFICE/onlyoffice-nextcloud/releases/download/v9.3.0/onlyoffice.tar.gz",
+      "sha256": "sha256-9H/ASllarwmSEWCpPGmm6qy7NgSt3NXzJgBxz5v0Db8=",
+      "prefix": "/apps/onlyoffice"
+    }
+  },
+  "tables": {
+    "0": {
+      "version": "0.7.4",
+      "url": "https://github.com/nextcloud-releases/tables/releases/download/v0.7.4/tables-v0.7.4.tar.gz",
+      "sha256": "sha256-2SIASvMQQt7XUzU6wAaZjVW9sMZ4VKGGCtEUdLUYzfQ=",
+      "prefix": "/apps/tables"
+    }
+  },
+  "mail": {
+    "3": {
+      "version": "3.7.5",
+      "url": "https://github.com/nextcloud-releases/mail/releases/download/v3.7.5/mail-v3.7.5.tar.gz",
+      "sha256": "sha256-zLKTXqXTKyCRrETjKTJzO84QdYar/4zjUrbvT0aWfx0=",
+      "prefix": "/apps/mail"
+    }
+  },
+  "files_accesscontrol": {
+    "1": {
+      "version": "1.19.1",
+      "url": "https://github.com/nextcloud-releases/files_accesscontrol/releases/download/v1.19.1/files_accesscontrol-v1.19.1.tar.gz",
+      "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80=",
+      "prefix": "/apps/files_accesscontrol"
+    }
+  },
+  "files_accesscontrol": {
+    "1": {
+      "version": "1.20.0",
+      "url": "https://github.com/nextcloud-releases/files_automatedtagging/releases/download/v1.20.0/files_automatedtagging-v1.20.0.tar.gz",
+      "sha256": "sha256-Go46bhi/AzuIRkUK61s73y+jLsSLH6Ixobd6gAsSH2U=",
+      "prefix": "/apps/files_accesscontrol"
+    }
+  },
+  "files_retention": {
+    "1": {
+      "version": "1.18.0",
+      "url": "https://github.com/nextcloud-releases/files_retention/releases/download/v1.18.0/files_retention-v1.18.0.tar.gz",
+      "sha256": "sha256-FazftNLLdxlnt7libXG4Ngyi6hyyxC2VhX/PXEard98=",
+      "prefix": "/apps/files_retention"
     }
   }
 }
