@@ -1,4 +1,4 @@
-# logsmash_data
+# logsmash
 
 Analysis tool for Nextcloud logs files
 
@@ -37,8 +37,12 @@ Currently, the program can match against data from the following sources:
 - deck: 1.13.1
 - calendar: 4.7.13
 
-### Updating baked data
+#### Updating baked data
 
+Note that this is only needed when building with cargo, building with nix automatically uses the latest data.
+
+```bash
 rm -r data/src/data
 nix build .#extracted-logs-rust
 cp -rL result data/src/data && chmod -R +w data/src/data
+```
