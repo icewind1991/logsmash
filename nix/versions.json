@@ -54,5 +54,13 @@
       "sha256": "sha256-AQV2JeSrQcPSh2J2oG/Kbrh2Qo/nj1+orYJymDsQLDQ=",
       "prefix": "/apps/deck"
     }
+  },
+  "calendar": {
+    "4.7": {
+      "version": "4.7.13",
+      "url": "https://github.com/nextcloud-releases/calendar/releases/download/v4.7.13/calendar-v4.7.13.tar.gz",
+      "sha256": "sha256-e+/gNl7xFDxgnxweBXt/et+iyaWsKXNGeto32StZNW8=",
+      "prefix": "/apps/calendar"
+    }
   }
 }
