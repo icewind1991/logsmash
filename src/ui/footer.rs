@@ -31,6 +31,7 @@ fn help(page: UiPage) -> &'static str {
     match page {
         UiPage::MatchList => "«Q» Exit - «Enter» Select",
         UiPage::Match => "«Q» Exit - «Enter» Select - «Esc» Back",
-        UiPage::Logs => "«Q» Exit - «Esc» Back",
+        UiPage::Logs => "«Q» Exit - «Esc» Back - «C» Copy log line",
+        UiPage::Log => "«Q» Exit - «Esc» Back - «R» Toggle raw - «C» Copy log line",
     }
 }

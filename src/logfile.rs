@@ -1,7 +1,7 @@
 use crate::error::ReadError;
 use itertools::Either;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Seek};
 use zip::ZipArchive;
 
 pub enum LogFile {
@@ -34,6 +34,24 @@ impl LogFile {
             LogFile::Zip(zip) => {
                 let file = zip.by_index(0).expect("failed to open zip content again");
                 Either::Right(BufReader::new(file).lines().flatten())
+            }
+        }
+    }
+
+    pub fn nth(&mut self, index: usize) -> Option<String> {
+        match self {
+            LogFile::Plain(file) => {
+                file.rewind().unwrap();
+                file.lines().nth(index).transpose().ok().flatten()
+            }
+            LogFile::Zip(zip) => {
+                let file = zip.by_index(0).expect("failed to open zip content again");
+                BufReader::new(file)
+                    .lines()
+                    .nth(index)
+                    .transpose()
+                    .ok()
+                    .flatten()
             }
         }
     }

@@ -163,6 +163,7 @@ fn test_matcher() {
             message: "Not allowed to rename a shared album".into(),
             exception: None,
             time: OffsetDateTime::now_utc(),
+            index: 0,
         })
     );
     assert_eq!(
@@ -174,6 +175,7 @@ fn test_matcher() {
             message: "Not allowed to rename an album".into(),
             exception: None,
             time: OffsetDateTime::now_utc(),
+            index: 0,
         })
     );
     assert_eq!(
@@ -185,6 +187,7 @@ fn test_matcher() {
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
             time: OffsetDateTime::now_utc(),
+            index: 0,
         })
     );
     assert_eq!(
@@ -196,6 +199,7 @@ fn test_matcher() {
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
             time: OffsetDateTime::now_utc(),
+            index: 0,
         })
     );
     assert_eq!(
@@ -208,6 +212,7 @@ fn test_matcher() {
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: None,
                 time: OffsetDateTime::now_utc(),
+                index: 0,
             }
         )
     );
@@ -227,6 +232,7 @@ fn test_matcher() {
                     previous: None,
                 }),
                 time: OffsetDateTime::now_utc(),
+                index: 0,
             }
         )
     );

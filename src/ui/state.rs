@@ -1,70 +1,108 @@
 use crate::app::{App, LogMatch};
+use crate::copy_osc;
+use crate::logline::LogLine;
+use derive_more::From;
 use ratatui::widgets::{ScrollbarState, TableState};
 use table_state::TableStateExt;
 
-#[derive(Clone)]
+#[derive(Clone, From)]
 pub enum UiState<'a> {
-    MatchList {
-        table_state: TableState,
-        scroll_state: ScrollbarState,
-    },
-    Match {
-        result: &'a LogMatch,
-        table_state: TableState,
-        scroll_state: ScrollbarState,
-        previous: Box<UiState<'a>>,
-    },
-    Logs {
-        lines: &'a [usize],
-        table_state: TableState,
-        scroll_state: ScrollbarState,
-        previous: Box<UiState<'a>>,
-    },
+    MatchList(MatchListState),
+    Match(MatchState<'a>),
+    Logs(LogsState<'a>),
+    Log(LogState<'a>),
     Quit,
+}
+
+#[derive(Clone)]
+pub struct MatchListState {
+    pub table_state: TableState,
+    pub scroll_state: ScrollbarState,
+}
+
+impl MatchListState {
+    fn selected(&self) -> usize {
+        self.table_state.selected().unwrap()
+    }
+}
+
+#[derive(Clone)]
+pub struct MatchState<'a> {
+    pub result: &'a LogMatch,
+    pub table_state: TableState,
+    pub scroll_state: ScrollbarState,
+    pub previous: Box<UiState<'a>>,
+}
+
+impl<'a> MatchState<'a> {
+    fn selected(&self) -> usize {
+        self.table_state.selected().unwrap()
+    }
+}
+
+#[derive(Clone)]
+pub struct LogsState<'a> {
+    pub lines: &'a [usize],
+    pub table_state: TableState,
+    pub scroll_state: ScrollbarState,
+    pub previous: Box<UiState<'a>>,
+}
+
+impl<'a> LogsState<'a> {
+    fn selected(&self) -> usize {
+        self.table_state.selected().unwrap()
+    }
+}
+
+#[derive(Clone)]
+pub struct LogState<'a> {
+    pub log: &'a LogLine,
+    pub previous: Box<UiState<'a>>,
 }
 
 impl<'a> UiState<'a> {
     pub fn new(app: &App) -> Self {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
-        UiState::MatchList {
+        UiState::MatchList(MatchListState {
             table_state,
             scroll_state: ScrollbarState::new(app.match_lines()),
-        }
+        })
     }
 
     pub fn page(&self) -> UiPage {
         match self {
-            UiState::Quit | UiState::MatchList { .. } => UiPage::MatchList,
-            UiState::Match { .. } => UiPage::Match,
-            UiState::Logs { .. } => UiPage::Logs,
+            UiState::Quit | UiState::MatchList(_) => UiPage::MatchList,
+            UiState::Match(_) => UiPage::Match,
+            UiState::Logs(_) => UiPage::Logs,
+            UiState::Log(_) => UiPage::Log,
         }
     }
 
     fn table_state(&mut self) -> Option<&mut TableState> {
         match self {
-            UiState::MatchList { table_state, .. } => Some(table_state),
-            UiState::Match { table_state, .. } => Some(table_state),
-            UiState::Logs { table_state, .. } => Some(table_state),
-            UiState::Quit => None,
+            UiState::MatchList(state) => Some(&mut state.table_state),
+            UiState::Match(state) => Some(&mut state.table_state),
+            UiState::Logs(state) => Some(&mut state.table_state),
+            _ => None,
         }
     }
 
     fn scroll_state(&mut self) -> Option<&mut ScrollbarState> {
         match self {
-            UiState::MatchList { scroll_state, .. } => Some(scroll_state),
-            UiState::Match { scroll_state, .. } => Some(scroll_state),
-            UiState::Logs { scroll_state, .. } => Some(scroll_state),
-            UiState::Quit => None,
+            UiState::MatchList(state) => Some(&mut state.scroll_state),
+            UiState::Match(state) => Some(&mut state.scroll_state),
+            UiState::Logs(state) => Some(&mut state.scroll_state),
+            _ => None,
         }
     }
 
-    fn table_count(&self, app: &App) -> usize {
+    fn row_count(&self, app: &App) -> usize {
         match self {
-            UiState::MatchList { .. } => app.match_lines(),
-            UiState::Match { result, .. } => result.grouped.len(),
-            UiState::Logs { lines, .. } => lines.len(),
-            UiState::Quit => 0,
+            UiState::MatchList(_) => app.match_lines(),
+            UiState::Match(state) => state.result.grouped.len(),
+            UiState::Logs(state) => state.lines.len(),
+            _ => 0,
         }
     }
 
@@ -72,9 +110,9 @@ impl<'a> UiState<'a> {
         match (self, event) {
             (UiState::Quit, _) => UiState::Quit,
             (_, UiEvent::Quit) => UiState::Quit,
-            (UiState::MatchList { .. }, UiEvent::Back) => UiState::Quit,
+            (UiState::MatchList(_), UiEvent::Back) => UiState::Quit,
             (mut state, UiEvent::Down(step)) => {
-                let count = state.table_count(app);
+                let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
                     let pos = table_state.down(count, step);
                     let scroll_state = state.scroll_state().unwrap();
@@ -83,7 +121,7 @@ impl<'a> UiState<'a> {
                 state
             }
             (mut state, UiEvent::Up(step)) => {
-                let count = state.table_count(app);
+                let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
                     let pos = table_state.up(count, step);
                     let scroll_state = state.scroll_state().unwrap();
@@ -91,14 +129,8 @@ impl<'a> UiState<'a> {
                 }
                 state
             }
-            (
-                UiState::MatchList {
-                    table_state: prev_state,
-                    scroll_state: prev_scroll,
-                },
-                UiEvent::Select,
-            ) => {
-                let selected = prev_state.selected().unwrap_or(0);
+            (UiState::MatchList(state), UiEvent::Select) => {
+                let selected = state.selected();
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
 
@@ -109,45 +141,59 @@ impl<'a> UiState<'a> {
                 } else {
                     &app.matches[selected - 1]
                 };
-                UiState::Match {
+                UiState::Match(MatchState {
                     result,
                     table_state,
                     scroll_state: ScrollbarState::new(result.count()),
-                    previous: Box::new(UiState::MatchList {
-                        table_state: prev_state,
-                        scroll_state: prev_scroll,
-                    }),
-                }
+                    previous: Box::new(state.into()),
+                })
             }
-            (
-                UiState::Match {
-                    table_state: prev_state,
-                    scroll_state: prev_scroll,
-                    previous,
-                    result,
-                },
-                UiEvent::Select,
-            ) => {
-                let selected = prev_state.selected().unwrap_or(0);
+            (UiState::Match(state), UiEvent::Select) => {
+                let selected = state.selected();
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
 
-                let lines = result.grouped[selected].lines.as_slice();
-                UiState::Logs {
+                let lines = state.result.grouped[selected].lines.as_slice();
+                UiState::Logs(LogsState {
                     lines,
                     table_state,
                     scroll_state: ScrollbarState::new(lines.len()),
-                    previous: Box::new(UiState::Match {
-                        table_state: prev_state,
-                        scroll_state: prev_scroll,
-                        previous,
-                        result,
-                    }),
-                }
+                    previous: Box::new(state.into()),
+                })
             }
-            (UiState::Match { previous, .. } | UiState::Logs { previous, .. }, UiEvent::Back) => {
-                *previous
+            (UiState::Logs(state), UiEvent::Select) => {
+                let selected = state.selected();
+                let mut table_state = TableState::default();
+                table_state.select(Some(0));
+
+                let line = state.lines[selected];
+                let log = &app.lines[line];
+                UiState::Log(LogState {
+                    log,
+                    previous: Box::new(state.into()),
+                })
             }
+            (UiState::Logs(state), UiEvent::Copy) => {
+                let selected = state.selected();
+                let mut table_state = TableState::default();
+                table_state.select(Some(0));
+
+                let line = &app.lines[state.lines[selected]];
+                let raw = app.get_line(line.index).unwrap_or_default();
+                copy_osc(&raw);
+                UiState::Logs(state)
+            }
+            (UiState::Log(state), UiEvent::Copy) => {
+                let raw = app.get_line(state.log.index).unwrap_or_default();
+                copy_osc(&raw);
+                UiState::Log(state)
+            }
+            (
+                UiState::Match(MatchState { previous, .. })
+                | UiState::Logs(LogsState { previous, .. })
+                | UiState::Log(LogState { previous, .. }),
+                UiEvent::Back,
+            ) => *previous,
             (state, _) => state,
         }
     }
@@ -159,12 +205,14 @@ pub enum UiEvent {
     Up(usize),
     Down(usize),
     Select,
+    Copy,
 }
 
 pub enum UiPage {
     MatchList,
     Match,
     Logs,
+    Log,
 }
 
 mod table_state {

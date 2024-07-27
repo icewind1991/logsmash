@@ -20,6 +20,8 @@ tinystr = { version = "0.7.6", features = ["serde"] }
 time = { version = "0.3.36", features = ["serde", "serde-well-known"] }
 hdrhistogram = "7.5.4"
 ahash = "0.8.11"
+base64 = "0.21.7"
+derive_more = { version = "1.0.0-beta.6", features = ["from"] }
 
 [profile.dev.package."*"]
 opt-level = 3

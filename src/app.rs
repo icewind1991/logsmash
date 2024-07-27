@@ -1,8 +1,10 @@
+use crate::logfile::LogFile;
 use crate::logline::LogLine;
 use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::StatementList;
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 use time::OffsetDateTime;
 
 pub struct App {
@@ -14,6 +16,7 @@ pub struct App {
     pub error_count: usize,
     pub all: LogMatch,
     pub unmatched: LogMatch,
+    pub log_file: Mutex<LogFile>,
 }
 
 impl App {
@@ -24,6 +27,10 @@ impl App {
             1
         };
         self.matches.len() + 1 + unmatched_line_count
+    }
+
+    pub fn get_line(&self, index: usize) -> Option<String> {
+        self.log_file.lock().unwrap().nth(index)
     }
 }
 
@@ -63,7 +70,7 @@ fn group_lines<I: Iterator<Item = usize>>(all_lines: &[LogLine], indices: I) -> 
     let mut map: BTreeMap<u64, Vec<usize>> = BTreeMap::new();
 
     for (i, line) in indices.map(|i| (i, &all_lines[i])) {
-        map.entry(line.index()).or_default().push(i);
+        map.entry(line.identity()).or_default().push(i);
     }
 
     let mut list: Vec<_> = map

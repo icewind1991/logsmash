@@ -4,8 +4,9 @@ use crate::ui::footer::footer;
 use crate::ui::histogram::UiHistogram;
 use crate::ui::match_list::match_list;
 use crate::ui::raw_logs::raw_logs;
+use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
-use crate::ui::state::{UiEvent, UiState};
+use crate::ui::state::{LogState, LogsState, MatchListState, MatchState, UiEvent, UiState};
 use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -21,6 +22,7 @@ mod footer;
 mod histogram;
 mod match_list;
 mod raw_logs;
+mod single_log;
 mod single_match;
 mod state;
 pub mod style;
@@ -58,7 +60,10 @@ fn handle_events() -> io::Result<Option<UiEvent>> {
                     KeyCode::Up => Some(UiEvent::Up(1)),
                     KeyCode::PageDown => Some(UiEvent::Down(10)),
                     KeyCode::PageUp => Some(UiEvent::Up(10)),
+                    KeyCode::End => Some(UiEvent::Down(usize::MAX)),
+                    KeyCode::Home => Some(UiEvent::Up(usize::MAX)),
                     KeyCode::Enter | KeyCode::Right => Some(UiEvent::Select),
+                    KeyCode::Char('c') => Some(UiEvent::Copy),
                     _ => None,
                 });
             }
@@ -80,10 +85,10 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
 
     match state {
         UiState::Quit => {}
-        UiState::MatchList {
+        UiState::MatchList(MatchListState {
             table_state,
             scroll_state,
-        } => {
+        }) => {
             let selected = table_state.selected().unwrap_or(0);
             let histogram = if selected == 0 {
                 &app.all.histogram
@@ -113,12 +118,12 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             );
             frame.render_widget(footer(app, page), layout[2]);
         }
-        UiState::Match {
+        UiState::Match(MatchState {
             result,
             table_state,
             scroll_state,
             ..
-        } => {
+        }) => {
             let selected_group = &result.grouped[table_state.selected().unwrap_or_default()];
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(Some("↑"))
@@ -140,12 +145,12 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             );
             frame.render_widget(footer(app, page), layout[2]);
         }
-        UiState::Logs {
+        UiState::Logs(LogsState {
             lines,
             table_state,
             scroll_state,
             ..
-        } => {
+        }) => {
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(Some("↑"))
                 .end_symbol(Some("↓"));
@@ -162,6 +167,10 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
                 }),
                 scroll_state,
             );
+            frame.render_widget(footer(app, page), layout[2]);
+        }
+        UiState::Log(LogState { log, .. }) => {
+            frame.render_widget(single_log(app, log), layout[0].union(layout[1]));
             frame.render_widget(footer(app, page), layout[2]);
         }
     }
