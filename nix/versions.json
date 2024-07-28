@@ -175,20 +175,12 @@
       "prefix": "/apps/mail"
     }
   },
-  "files_accesscontrol": {
-    "1": {
-      "version": "1.19.1",
-      "url": "https://github.com/nextcloud-releases/files_accesscontrol/releases/download/v1.19.1/files_accesscontrol-v1.19.1.tar.gz",
-      "sha256": "sha256-e9387k5yn3lAZ7uN0YU8zNVkX8sCoNxyc5M3E3azo80=",
-      "prefix": "/apps/files_accesscontrol"
-    }
-  },
-  "files_accesscontrol": {
+  "files_automatedtagging": {
     "1": {
       "version": "1.20.0",
       "url": "https://github.com/nextcloud-releases/files_automatedtagging/releases/download/v1.20.0/files_automatedtagging-v1.20.0.tar.gz",
       "sha256": "sha256-Go46bhi/AzuIRkUK61s73y+jLsSLH6Ixobd6gAsSH2U=",
-      "prefix": "/apps/files_accesscontrol"
+      "prefix": "/apps/files_automatedtagging"
     }
   },
   "files_retention": {
