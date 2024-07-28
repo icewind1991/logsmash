@@ -31,7 +31,7 @@ impl LogFile {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a str> + Send + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = &str> + Send + '_ {
         self.content.lines()
     }
 

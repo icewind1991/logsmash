@@ -180,12 +180,12 @@ impl<'a> UiState<'a> {
 
                 let line = &app.lines[state.lines[selected]];
                 let raw = app.get_line(line.index).unwrap_or_default();
-                copy_osc(&raw);
+                copy_osc(raw);
                 UiState::Logs(state)
             }
             (UiState::Log(state), UiEvent::Copy) => {
                 let raw = app.get_line(state.log.index).unwrap_or_default();
-                copy_osc(&raw);
+                copy_osc(raw);
                 UiState::Log(state)
             }
             (

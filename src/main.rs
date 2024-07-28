@@ -41,7 +41,7 @@ fn main() -> MainResult {
 
     let mut counts: HashMap<MatchResult, Vec<usize>> = HashMap::new();
     let first = lines.next().unwrap();
-    let first_parsed: LogLine = match serde_json::from_str(&first) {
+    let first_parsed: LogLine = match serde_json::from_str(first) {
         Ok(first_parsed) => first_parsed,
         Err(e) => {
             eprintln!("Failed to parse the first line in the log: {:#}", e);
@@ -65,7 +65,7 @@ fn main() -> MainResult {
         .enumerate()
         .par_bridge()
         .flat_map(|(index, line)| {
-            let mut parsed = serde_json::from_str::<LogLine>(&line).ok()?;
+            let mut parsed = serde_json::from_str::<LogLine>(line).ok()?;
             parsed.index = index;
             Some(parsed)
         })

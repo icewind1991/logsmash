@@ -3,6 +3,7 @@ use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use rayon::prelude::*;
 use regex::Regex;
+use std::hash::{Hash, Hasher};
 use std::iter::once;
 
 pub struct LogMatch {
@@ -91,7 +92,7 @@ impl Matcher {
     }
 }
 
-#[derive(Debug, Clone, Eq, Hash)]
+#[derive(Debug, Clone, Eq)]
 pub enum MatchResult {
     Single(usize),
     List(Vec<usize>),
@@ -109,6 +110,19 @@ impl PartialEq for MatchResult {
                 a.eq(&b)
             }
             _ => false,
+        }
+    }
+}
+
+impl Hash for MatchResult {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            MatchResult::Single(i) => i.hash(state),
+            MatchResult::List(list) => {
+                let mut list = list.clone();
+                list.sort();
+                list.hash(state);
+            }
         }
     }
 }
