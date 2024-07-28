@@ -24,6 +24,9 @@ mod ui;
 #[derive(Debug, Parser)]
 struct Args {
     file: String,
+    /// Collect data and exit, intended for profiling
+    #[arg(long)]
+    profile: bool,
 }
 
 fn main() -> MainResult {
@@ -110,6 +113,10 @@ fn main() -> MainResult {
         error_count,
         log_file: Mutex::new(log_file),
     };
+
+    if args.profile {
+        return Ok(());
+    }
 
     run_ui(app)?;
 
