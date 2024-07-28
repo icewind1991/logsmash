@@ -1,6 +1,6 @@
 use crate::app::{App, LogMatch};
 use crate::copy_osc;
-use crate::logline::LogLine;
+use crate::logline::{FullLogLine, LogLine};
 use derive_more::From;
 use ratatui::widgets::{ScrollbarState, TableState};
 use table_state::TableStateExt;
@@ -56,7 +56,10 @@ impl<'a> LogsState<'a> {
 
 #[derive(Clone)]
 pub struct LogState<'a> {
+    pub trace_len: usize,
     pub log: &'a LogLine,
+    pub full_line: FullLogLine,
+    pub table_state: TableState,
     pub previous: Box<UiState<'a>>,
 }
 
@@ -84,6 +87,7 @@ impl<'a> UiState<'a> {
             UiState::MatchList(state) => Some(&mut state.table_state),
             UiState::Match(state) => Some(&mut state.table_state),
             UiState::Logs(state) => Some(&mut state.table_state),
+            UiState::Log(state) => Some(&mut state.table_state),
             _ => None,
         }
     }
@@ -102,6 +106,7 @@ impl<'a> UiState<'a> {
             UiState::MatchList(_) => app.match_lines(),
             UiState::Match(state) => state.result.grouped.len(),
             UiState::Logs(state) => state.lines.len(),
+            UiState::Log(state) => state.trace_len,
             _ => 0,
         }
     }
@@ -115,8 +120,9 @@ impl<'a> UiState<'a> {
                 let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
                     let pos = table_state.down(count, step);
-                    let scroll_state = state.scroll_state().unwrap();
-                    *scroll_state = scroll_state.position(pos);
+                    if let Some(scroll_state) = state.scroll_state() {
+                        *scroll_state = scroll_state.position(pos);
+                    }
                 }
                 state
             }
@@ -124,8 +130,9 @@ impl<'a> UiState<'a> {
                 let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
                     let pos = table_state.up(count, step);
-                    let scroll_state = state.scroll_state().unwrap();
-                    *scroll_state = scroll_state.position(pos);
+                    if let Some(scroll_state) = state.scroll_state() {
+                        *scroll_state = scroll_state.position(pos);
+                    }
                 }
                 state
             }
@@ -168,8 +175,18 @@ impl<'a> UiState<'a> {
 
                 let line = state.lines[selected];
                 let log = &app.lines[line];
+                let raw_line = app.get_line(log.index).unwrap();
+                let full_line: FullLogLine = serde_json::from_str(raw_line).unwrap();
+                let trace_len = if let Some(exception) = &full_line.exception {
+                    exception.stack().map(|e| 1 + e.trace.len()).sum()
+                } else {
+                    0
+                };
                 UiState::Log(LogState {
                     log,
+                    full_line,
+                    trace_len,
+                    table_state,
                     previous: Box::new(state.into()),
                 })
             }

@@ -170,8 +170,14 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             );
             frame.render_widget(footer(app, page), layout[2]);
         }
-        UiState::Log(LogState { log, .. }) => {
-            frame.render_widget(single_log(app, log), layout[0].union(layout[1]));
+        UiState::Log(LogState {
+            log, table_state, ..
+        }) => {
+            frame.render_stateful_widget(
+                single_log(app, log),
+                layout[0].union(layout[1]),
+                table_state,
+            );
             frame.render_widget(footer(app, page), layout[2]);
         }
     }
