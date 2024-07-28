@@ -4,28 +4,73 @@ Analysis tool for Nextcloud logs files
 
 ![Logsmash screenshot](./screenshots/screenshot.png)
 
-## Usage
+## Quickstart
+
+Download the binary from the [releases page](https://github.com/icewind1991/logsmash/releases), place it somewhere in
+your `$PATH` and make it executable.
 
 ```bash
 logsmash ./logfile.log
 ```
 
-Once the log file is load a list of matched log statements or exception are shown and a histogram for the selected match
-is show on top.
+## Log files
 
-Selecting a match shows a list of distinct log items and selecting a log item shows a list of all occurrences of the log
-message.
+Logsmash supports both loading plain log files, or zip files containing (only) the log.
 
-## Log matching
+## Log sources
 
-Logsmash tries to match the log item to the place in the source where the message originates from. This is either a call
-to a log method or an exception being thrown.
+Logsmash is built around matching log line to their source, either a call to a logging function or an exception being
+thrown.
+Many log lines do not include information about their source to logsmash attempts to find the source of the log by
+comparing
+the logged message against a list of known log sources included in the binary.
 
-A log item can sometimes be matched to multiple items that are deemed to be equally likely to be the origin of the log
-item.
-In those cases all matches will be shown.
+Since multiple log sources can create similar log lines, some lines will match to multiple log sources, in those cases
+logsmash
+will show all the matched sources as a single item.
+Log items that cannot be matched to any known source are grouped together
 
-If a log item cannot be matched to an origin it will added to the "Unmatched lines" at the bottom of the list.
+## UI overview
+
+Logsmash contains the following UI pages:
+
+### Overview
+
+Shows a list of all matched sources with their source location, the number of log items matched to the source, and a
+graph of log occurrence over time.
+
+Selecting an item will bring you to the source overview for the log source.
+
+### Source overview
+
+Shows a list of distinct log lines (lines with the same message, level and context).
+
+Selecting an item will bring you to the log list
+
+### Log list
+
+Shows a list of individual log items
+
+Selecting an item will bring you to the log page
+
+### Log page
+
+Shows the message and accompanying metadata for the log line. For log lines with exceptions, the exception backtrace is
+shown.
+
+### Log occurrence graph
+
+Lists that contain grouped log lines come with a graph that show how often the group of log lines occurred over time as
+a histogram.
+Each line in the list will show a small version of the graph, and a larger version of the graph for the selected item is
+shown above the list.
+
+## Keyboard controls
+
+- All lists are navigated with the arrow keys, `PgUp`/`PgDown` and `Home`/`End`.
+- Items in lists can be selected with `Enter` or the right arrow key.
+- You can return to the previous page with `Esc` or the left arrow key.
+- Single log items can be copied as json with `c`
 
 ## Supported data
 
@@ -51,6 +96,21 @@ Currently, the program can match against data from the following sources:
 - files_accesscontrol: 1.19.1
 - files_accesscontrol: 1.20.0
 - files_retention: 1.18.0
+
+## Roadmap
+
+- [ ] More flexible log file input
+    - [ ] Log files compressed trough gzip, xz, etc
+    - [ ] Archived containing more than one file
+- [ ] Data from more app version
+- [ ] Support extracting app versions from a system report
+
+## Building
+
+The preferred way of building is trough [`nix`](https://nixos.org/download/#download-nix), this ensure that all baked
+data is automatically up-to-date.
+
+`nix build .#logsmash`
 
 #### Updating baked data
 
