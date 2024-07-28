@@ -70,7 +70,7 @@ shown above the list.
 - All lists are navigated with the arrow keys, `PgUp`/`PgDown` and `Home`/`End`.
 - Items in lists can be selected with `Enter` or the right arrow key.
 - You can return to the previous page with `Esc` or the left arrow key.
-- Single log items can be copied as json with `c`
+- Single log items can be copied as json with `c` (requires [OSC 52 support](https://github.com/ojroques/vim-oscyank))
 
 ## Supported data
 
