@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  release:
+    types: [ created ]
+
+permissions:
+  contents: write
+
+jobs:
+  release-binaries:
+    name: Build release binaries
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            ext: ""
+          - target: x86_64-pc-windows-gnu
+            ext: ".exe"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+      - uses: icewind1991/attic-action@v1
+        with:
+          name: ci
+          instance: https://cache.icewind.me
+          authToken: '${{ secrets.ATTIC_TOKEN }}'
+      - run: nix build .#${{ matrix.target }}
+      - name: Upload binary to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: result/bin/logsmash${{ matrix.ext }}
+          asset_name: logsmash-${{ matrix.target }}${{ matrix.ext }}
+          tag: ${{ github.ref }}
