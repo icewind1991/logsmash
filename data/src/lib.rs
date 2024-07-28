@@ -15,7 +15,7 @@ impl StatementList {
         StatementList { statements }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &'static LoggingStatement> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &'static LoggingStatement> + Send + '_ {
         self.statements
             .iter()
             .copied()

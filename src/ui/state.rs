@@ -208,6 +208,7 @@ pub enum UiEvent {
     Copy,
 }
 
+#[derive(PartialEq)]
 pub enum UiPage {
     MatchList,
     Match,

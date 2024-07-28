@@ -6,7 +6,7 @@ use crate::ui::match_list::match_list;
 use crate::ui::raw_logs::raw_logs;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
-use crate::ui::state::{LogState, LogsState, MatchListState, MatchState, UiEvent, UiState};
+use crate::ui::state::{LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState};
 use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -36,7 +36,7 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
 
     while !matches!(ui_state, UiState::Quit) {
         terminal.draw(|frame| ui(frame, &app, &mut ui_state))?;
-        if let Some(event) = handle_events()? {
+        if let Some(event) = handle_events(ui_state.page())? {
             ui_state = ui_state.process(event, &app);
         }
     }
@@ -46,7 +46,7 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
     Ok(())
 }
 
-fn handle_events() -> io::Result<Option<UiEvent>> {
+fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
     if event::poll(std::time::Duration::from_millis(50))? {
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Press {
@@ -55,7 +55,8 @@ fn handle_events() -> io::Result<Option<UiEvent>> {
                         Some(UiEvent::Quit)
                     }
                     KeyCode::Char('q') => Some(UiEvent::Quit),
-                    KeyCode::Esc | KeyCode::Left => Some(UiEvent::Back),
+                    KeyCode::Esc => Some(UiEvent::Back),
+                    KeyCode::Left if page != UiPage::MatchList => Some(UiEvent::Back),
                     KeyCode::Down => Some(UiEvent::Down(1)),
                     KeyCode::Up => Some(UiEvent::Up(1)),
                     KeyCode::PageDown => Some(UiEvent::Down(10)),

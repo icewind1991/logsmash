@@ -1,6 +1,7 @@
 use crate::logline::LogLine;
 use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
+use rayon::prelude::*;
 use regex::Regex;
 use std::iter::once;
 
@@ -41,6 +42,7 @@ impl Matcher {
         let matches: Vec<_> = statements
             .iter()
             .enumerate()
+            .par_bridge()
             .map(|(index, statement)| LogMatch::new(index, statement))
             .collect();
 
@@ -89,10 +91,26 @@ impl Matcher {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub enum MatchResult {
     Single(usize),
     List(Vec<usize>),
+}
+
+impl PartialEq for MatchResult {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (MatchResult::Single(a), MatchResult::Single(b)) => a.eq(b),
+            (MatchResult::List(a), MatchResult::List(b)) => {
+                let mut a = a.clone();
+                let mut b = b.clone();
+                a.sort();
+                b.sort();
+                a.eq(&b)
+            }
+            _ => false,
+        }
+    }
 }
 
 impl MatchResult {

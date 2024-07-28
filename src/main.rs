@@ -61,43 +61,40 @@ fn main() -> MainResult {
 
     let lines = once(first).chain(lines);
 
-    let results: Vec<_> = lines
+    let mut results: Vec<_> = lines
         .enumerate()
         .par_bridge()
-        .filter(|(_, line)| line.starts_with('{'))
-        .map(|(index, line)| {
-            let mut parsed = serde_json::from_str::<LogLine>(&line)?;
+        .flat_map(|(index, line)| {
+            let mut parsed = serde_json::from_str::<LogLine>(&line).ok()?;
             parsed.index = index;
+            Some(parsed)
+        })
+        .map(|parsed| {
             let log_match = matcher.match_log(&parsed);
-            Result::<_, serde_json::Error>::Ok((parsed, log_match))
+            (parsed, log_match)
         })
         .collect();
 
-    let mut error_count = 0;
+    results.sort_by_key(|(line, _)| line.index);
+
     let mut parsed_lines = Vec::with_capacity(1024);
     let mut unmatched_lines = Vec::with_capacity(256);
-    let mut parsed_index = 0;
 
-    for result in results {
+    for (parsed_index, result) in results.into_iter().enumerate() {
         let parsed = match result {
-            Ok((parsed, Some(match_result))) => {
+            (parsed, Some(match_result)) => {
                 counts.entry(match_result).or_default().push(parsed_index);
                 parsed
             }
-            Ok((parsed, None)) => {
+            (parsed, None) => {
                 unmatched_lines.push(parsed_index);
                 parsed
-            }
-            Err(_) => {
-                error_count += 1;
-                continue;
             }
         };
 
         parsed_lines.push(parsed);
-        parsed_index += 1;
     }
-    parsed_lines.sort_by_key(|line| line.index);
+    let error_count = log_file.iter().count();
 
     let mut matched_lines: Vec<(_, _)> = counts.into_iter().collect();
     matched_lines.sort_by_key(|(_, lines)| lines.len());
@@ -111,7 +108,7 @@ fn main() -> MainResult {
     let unmatched = LogMatch::new(None, unmatched_lines, &parsed_lines);
 
     let matches = matched_lines
-        .into_iter()
+        .into_par_iter()
         .map(|(result, lines)| LogMatch::new(Some(result), lines, &parsed_lines))
         .collect();
 
