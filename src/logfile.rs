@@ -1,17 +1,15 @@
 use crate::error::ReadError;
-use itertools::Either;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Seek};
+use std::io::Read;
 use zip::ZipArchive;
 
-pub enum LogFile {
-    Plain(BufReader<File>),
-    Zip(ZipArchive<File>),
+pub struct LogFile {
+    content: String,
 }
 
 impl LogFile {
     pub fn open(path: &str) -> Result<LogFile, ReadError> {
-        let file = File::open(path)?;
+        let mut file = File::open(path)?;
         if path.ends_with(".zip") {
             let mut zip = ZipArchive::new(file)?;
             if zip.len() > 1 {
@@ -19,40 +17,25 @@ impl LogFile {
             } else if zip.is_empty() {
                 return Err(ReadError::NoFiles);
             }
-            // ensure we can open the file
-            let _ = zip.by_index(0)?;
 
-            Ok(LogFile::Zip(zip))
+            let mut log = zip.by_index(0)?;
+            let mut content = String::with_capacity(log.size() as usize);
+            log.read_to_string(&mut content)?;
+
+            Ok(LogFile { content })
         } else {
-            Ok(LogFile::Plain(BufReader::new(file)))
+            let mut content = String::new();
+            file.read_to_string(&mut content)?;
+
+            Ok(LogFile { content })
         }
     }
 
-    pub fn iter(&mut self) -> impl Iterator<Item = String> + '_ {
-        match self {
-            LogFile::Plain(file) => Either::Left(file.lines().flatten()),
-            LogFile::Zip(zip) => {
-                let file = zip.by_index(0).expect("failed to open zip content again");
-                Either::Right(BufReader::new(file).lines().flatten())
-            }
-        }
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a str> + Send + 'a {
+        self.content.lines()
     }
 
-    pub fn nth(&mut self, index: usize) -> Option<String> {
-        match self {
-            LogFile::Plain(file) => {
-                file.rewind().unwrap();
-                file.lines().nth(index).transpose().ok().flatten()
-            }
-            LogFile::Zip(zip) => {
-                let file = zip.by_index(0).expect("failed to open zip content again");
-                BufReader::new(file)
-                    .lines()
-                    .nth(index)
-                    .transpose()
-                    .ok()
-                    .flatten()
-            }
-        }
+    pub fn nth(&self, index: usize) -> Option<&str> {
+        self.iter().nth(index)
     }
 }

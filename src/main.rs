@@ -8,10 +8,11 @@ use base64::prelude::*;
 use clap::Parser;
 use logsmash_data::{default_apps, get_statements, SourceDefinition};
 use main_error::MainResult;
+use rayon::prelude::ParallelBridge;
+use rayon::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::iter::once;
-use std::sync::Mutex;
 
 mod app;
 mod error;
@@ -32,7 +33,7 @@ struct Args {
 fn main() -> MainResult {
     let args = Args::parse();
 
-    let mut log_file = LogFile::open(&args.file).map_err(|err| LogError::Read {
+    let log_file = LogFile::open(&args.file).map_err(|err| LogError::Read {
         err,
         path: args.file,
     })?;
@@ -59,32 +60,44 @@ fn main() -> MainResult {
     let matcher = Matcher::new(&statements);
 
     let lines = once(first).chain(lines);
+
+    let results: Vec<_> = lines
+        .enumerate()
+        .par_bridge()
+        .filter(|(_, line)| line.starts_with('{'))
+        .map(|(index, line)| {
+            let mut parsed = serde_json::from_str::<LogLine>(&line)?;
+            parsed.index = index;
+            let log_match = matcher.match_log(&parsed);
+            Result::<_, serde_json::Error>::Ok((parsed, log_match))
+        })
+        .collect();
+
     let mut error_count = 0;
-    let mut unmatched_counts: HashMap<String, Vec<usize>> = HashMap::new();
     let mut parsed_lines = Vec::with_capacity(1024);
     let mut unmatched_lines = Vec::with_capacity(256);
     let mut parsed_index = 0;
-    for (index, line) in lines.enumerate() {
-        if line.starts_with('{') {
-            let mut parsed = match serde_json::from_str::<LogLine>(&line) {
-                Ok(parsed) => parsed,
-                Err(_) => {
-                    error_count += 1;
-                    continue;
-                }
-            };
-            parsed.index = index;
-            if let Some(index) = matcher.match_log(&parsed) {
-                counts.entry(index).or_default().push(parsed_index);
-            } else if let Some(entry) = unmatched_counts.get_mut(parsed.app.as_str()) {
-                entry.push(parsed_index)
-            } else {
-                unmatched_lines.push(parsed_index);
+
+    for result in results {
+        let parsed = match result {
+            Ok((parsed, Some(match_result))) => {
+                counts.entry(match_result).or_default().push(parsed_index);
+                parsed
             }
-            parsed_lines.push(parsed);
-            parsed_index += 1;
-        }
+            Ok((parsed, None)) => {
+                unmatched_lines.push(parsed_index);
+                parsed
+            }
+            Err(_) => {
+                error_count += 1;
+                continue;
+            }
+        };
+
+        parsed_lines.push(parsed);
+        parsed_index += 1;
     }
+    parsed_lines.sort_by_key(|line| line.index);
 
     let mut matched_lines: Vec<(_, _)> = counts.into_iter().collect();
     matched_lines.sort_by_key(|(_, lines)| lines.len());
@@ -111,7 +124,7 @@ fn main() -> MainResult {
         unmatched,
         all,
         error_count,
-        log_file: Mutex::new(log_file),
+        log_file,
     };
 
     if args.profile {

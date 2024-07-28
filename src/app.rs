@@ -4,7 +4,6 @@ use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::StatementList;
 use std::collections::BTreeMap;
-use std::sync::Mutex;
 use time::OffsetDateTime;
 
 pub struct App {
@@ -16,7 +15,7 @@ pub struct App {
     pub error_count: usize,
     pub all: LogMatch,
     pub unmatched: LogMatch,
-    pub log_file: Mutex<LogFile>,
+    pub log_file: LogFile,
 }
 
 impl App {
@@ -29,8 +28,8 @@ impl App {
         self.matches.len() + 1 + unmatched_line_count
     }
 
-    pub fn get_line(&self, index: usize) -> Option<String> {
-        self.log_file.lock().unwrap().nth(index)
+    pub fn get_line(&self, index: usize) -> Option<&str> {
+        self.log_file.nth(index)
     }
 }
 

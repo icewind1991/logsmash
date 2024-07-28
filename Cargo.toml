@@ -22,6 +22,7 @@ hdrhistogram = "7.5.4"
 ahash = "0.8.11"
 base64 = "0.21.7"
 derive_more = { version = "1.0.0-beta.6", features = ["from"] }
+rayon = "1.10.0"
 
 [profile.dev.package."*"]
 opt-level = 3

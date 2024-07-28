@@ -38,7 +38,7 @@ pub struct Matcher {
 
 impl Matcher {
     pub fn new(statements: &StatementList) -> Matcher {
-        let mut matches: Vec<_> = statements
+        let matches: Vec<_> = statements
             .iter()
             .enumerate()
             .map(|(index, statement)| LogMatch::new(index, statement))
