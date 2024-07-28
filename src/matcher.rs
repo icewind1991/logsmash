@@ -12,10 +12,11 @@ pub struct LogMatch {
     exception: Option<&'static str>,
     path: &'static str,
     line: usize,
+    index: usize,
 }
 
 impl LogMatch {
-    pub fn new(statement: &LoggingStatement) -> LogMatch {
+    pub fn new(index: usize, statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
             pattern: Regex::new(statement.regex).unwrap(),
@@ -26,6 +27,7 @@ impl LogMatch {
             exception: statement.exception,
             path: statement.path,
             line: statement.line,
+            index,
         }
     }
 }
@@ -36,9 +38,13 @@ pub struct Matcher {
 
 impl Matcher {
     pub fn new(statements: &StatementList) -> Matcher {
-        Matcher {
-            matches: statements.iter().map(LogMatch::new).collect(),
-        }
+        let mut matches: Vec<_> = statements
+            .iter()
+            .enumerate()
+            .map(|(index, statement)| LogMatch::new(index, statement))
+            .collect();
+
+        Matcher { matches }
     }
 
     pub fn match_log(&self, log: &LogLine) -> Option<MatchResult> {
@@ -46,17 +52,17 @@ impl Matcher {
         let mut best_length = 0;
 
         if let Some(exception) = &log.exception {
-            for (i, log_match) in self.matches.iter().enumerate() {
+            for log_match in self.matches.iter() {
                 if log_match.line == exception.line
                     && log_match.exception == Some(exception.exception.as_str())
                     && exception.file.ends_with(log_match.path)
                 {
-                    return Some(MatchResult::Single(i));
+                    return Some(MatchResult::Single(log_match.index));
                 }
             }
         }
 
-        for (i, log_match) in self.matches.iter().enumerate() {
+        for log_match in self.matches.iter() {
             if log_match.has_meaningful_message
                 && log.level.matches(log_match.level)
                 && log_match.pattern.is_match(log.message.as_str())
@@ -67,12 +73,12 @@ impl Matcher {
                     best_length = log_match.pattern_length;
                 }
                 best_match = Some(match best_match {
-                    Some(MatchResult::Single(res)) => MatchResult::List(vec![res, i]),
+                    Some(MatchResult::Single(res)) => MatchResult::List(vec![res, log_match.index]),
                     Some(MatchResult::List(mut list)) => {
-                        list.push(i);
+                        list.push(log_match.index);
                         MatchResult::List(list)
                     }
-                    None => MatchResult::Single(i),
+                    None => MatchResult::Single(log_match.index),
                 });
             }
         }
