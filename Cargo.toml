@@ -24,7 +24,7 @@ base64 = "0.21.7"
 derive_more = { version = "1.0.0-beta.6", features = ["from"] }
 rayon = "1.10.0"
 
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
+[target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.6.0"
 
 [profile.dev.package."*"]
