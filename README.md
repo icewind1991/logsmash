@@ -104,10 +104,11 @@ Currently, the program can match against data from the following sources:
     - [ ] Archived containing more than one file
 - [ ] Data from more app version
 - [ ] Support extracting app versions from a system report
+- [ ] Add filtering to all lists
 
 ## Building
 
-The preferred way of building is trough [`nix`](https://nixos.org/download/#download-nix), this ensure that all baked
+The preferred way of building is trough [`nix`](https://nixos.org/download/#download-nix), this ensures that all baked
 data is automatically up-to-date.
 
 `nix build .#logsmash`
