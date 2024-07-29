@@ -37,6 +37,7 @@ pub struct LogMatch {
     pub result: Option<MatchResult>,
     pub lines: Vec<usize>,
     pub histogram: TimeGraph,
+    pub sparkline: String,
     pub grouped: Vec<GroupedLines>,
 }
 
@@ -49,11 +50,13 @@ impl LogMatch {
             histogram.add(line.time);
         }
         let grouped = group_lines(all_lines, lines.iter().copied());
+        let sparkline = histogram.sparkline::<10>();
 
         LogMatch {
             result,
             lines,
             histogram,
+            sparkline,
             grouped,
         }
     }
@@ -84,6 +87,7 @@ fn group_lines<I: Iterator<Item = usize>>(all_lines: &[LogLine], indices: I) -> 
 pub struct GroupedLines {
     pub lines: Vec<usize>,
     pub histogram: TimeGraph,
+    pub sparkline: String,
 }
 
 impl GroupedLines {
@@ -94,7 +98,12 @@ impl GroupedLines {
         for line in lines.iter().map(|line| &all_lines[*line]) {
             histogram.add(line.time);
         }
-        GroupedLines { lines, histogram }
+        let sparkline = histogram.sparkline::<10>();
+        GroupedLines {
+            lines,
+            histogram,
+            sparkline,
+        }
     }
 
     pub fn len(&self) -> usize {

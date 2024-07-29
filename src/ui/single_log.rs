@@ -74,7 +74,7 @@ fn exception_trace(exception: &FullException) -> impl Iterator<Item = Row> + '_ 
     let exception_row = Row::new([
         Text::from(""),
         Text::from(exception.line.to_string()).alignment(Alignment::Right),
-        Text::from(exception.file.clone()),
+        Text::from(exception.file.as_str()),
     ])
     .style(TABLE_HEADER_STYLE);
     let trace_rows = exception.trace.iter().map(trace_line);
@@ -83,7 +83,7 @@ fn exception_trace(exception: &FullException) -> impl Iterator<Item = Row> + '_ 
 
 fn trace_line(trace: &Trace) -> Row {
     Row::new([
-        Text::from(trace.file.clone()),
+        Text::from(trace.file.as_str()),
         Text::from(if trace.line > 0 {
             trace.line.to_string()
         } else {

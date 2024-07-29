@@ -1,12 +1,11 @@
 use crate::app::{App, GroupedLines, LogMatch};
-use crate::ui::histogram::sparkline;
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
 use ratatui::layout::Constraint;
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 
-pub fn grouped_lines(app: &App, log_match: &LogMatch) -> ScrollbarTable<'static> {
+pub fn grouped_lines<'a>(app: &'a App, log_match: &'a LogMatch) -> ScrollbarTable<'a> {
     let grouped = &log_match.grouped;
     let header = [
         Text::from("Level"),
@@ -31,14 +30,14 @@ pub fn grouped_lines(app: &App, log_match: &LogMatch) -> ScrollbarTable<'static>
     ScrollbarTable::new(grouped.iter().map(|group| group_row(app, group)), widths).header(header)
 }
 
-fn group_row(app: &App, group: &GroupedLines) -> Row<'static> {
+fn group_row<'a>(app: &'a App, group: &'a GroupedLines) -> Row<'a> {
     let line = &app.lines[group.lines[0]];
 
     Row::new([
-        line.level.as_str().to_string(),
-        line.app.to_string(),
-        line.display(),
-        sparkline(&group.histogram.counts(10)),
-        group.len().to_string(),
+        Text::from(line.level.as_str()),
+        Text::from(line.app.as_str()),
+        Text::from(line.display()),
+        Text::from(group.sparkline.as_str()),
+        Text::from(group.len().to_string()),
     ])
 }

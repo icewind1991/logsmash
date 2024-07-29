@@ -17,28 +17,8 @@ impl Widget for UiHistogram<'_> {
     where
         Self: Sized,
     {
-        let values = self.data.counts(area.width as usize);
+        let values: Vec<_> = self.data.counts(area.width as usize).collect();
         let sparkline = Sparkline::default().data(&values);
         sparkline.render(area, buf)
     }
-}
-
-const SPARKS: &[char] = &[' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-pub fn sparkline(values: &[u64]) -> String {
-    let max = values.iter().copied().max().unwrap() as f64;
-    let len = SPARKS.len() as f64 - 1.0;
-    values
-        .iter()
-        .copied()
-        .map(|val| {
-            let rel = val as f64 / max;
-            SPARKS[(rel * len) as usize]
-        })
-        .collect()
-}
-
-#[test]
-fn test_sparkline() {
-    assert_eq!(" ▇█", sparkline(&[0, 900, 1000]));
 }

@@ -7,7 +7,7 @@ use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 use time::format_description::well_known::Iso8601;
 
-pub fn raw_logs(app: &App, lines: &[usize]) -> ScrollbarTable<'static> {
+pub fn raw_logs<'a>(app: &'a App, lines: &[usize]) -> ScrollbarTable<'a> {
     let lines = lines.iter().copied().map(|i| &app.lines[i]);
     let header = [
         Text::from("Level"),
@@ -30,10 +30,10 @@ pub fn raw_logs(app: &App, lines: &[usize]) -> ScrollbarTable<'static> {
     ScrollbarTable::new(lines.map(log_row), widths).header(header)
 }
 
-fn log_row(line: &LogLine) -> Row<'static> {
+fn log_row(line: &LogLine) -> Row {
     Row::new([
-        Text::from(line.level.as_str().to_string()),
-        Text::from(line.app.to_string()),
+        Text::from(line.level.as_str()),
+        Text::from(line.app.as_str()),
         Text::from(line.display()),
         Text::from(line.time.format(&Iso8601::<TIME_FORMAT>).unwrap()).alignment(Alignment::Right),
     ])

@@ -1,5 +1,4 @@
 use crate::app::{App, LogMatch};
-use crate::ui::histogram::sparkline;
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
 use itertools::Either;
@@ -46,7 +45,7 @@ pub fn match_list(app: &App) -> ScrollbarTable {
     .header(header)
 }
 
-fn log_row<'a>(result: &LogMatch, app: &'a App, name: &'static str) -> Row<'a> {
+fn log_row<'a>(result: &'a LogMatch, app: &'a App, name: &'static str) -> Row<'a> {
     if let Some(match_result) = &result.result {
         let mut message = String::new();
         let mut paths = String::new();
@@ -61,7 +60,7 @@ fn log_row<'a>(result: &LogMatch, app: &'a App, name: &'static str) -> Row<'a> {
             Text::from(message),
             Text::from(paths),
             Text::from(lines).alignment(Alignment::Right),
-            Text::from(sparkline(&result.histogram.counts(10))),
+            Text::from(result.sparkline.as_str()),
             Text::from(result.count().to_string()),
         ])
         .height(match_result.len() as u16)
@@ -70,7 +69,7 @@ fn log_row<'a>(result: &LogMatch, app: &'a App, name: &'static str) -> Row<'a> {
             Text::from(name),
             Text::from(""),
             Text::from(""),
-            Text::from(sparkline(&result.histogram.counts(10))),
+            Text::from(result.sparkline.as_str()),
             Text::from(result.count().to_string()),
         ])
     }
