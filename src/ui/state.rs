@@ -111,11 +111,11 @@ impl<'a> UiState<'a> {
         }
     }
 
-    pub fn process(self, event: UiEvent, app: &'a App) -> UiState {
+    pub fn process(self, event: UiEvent, app: &'a App) -> (bool, UiState) {
         match (self, event) {
-            (UiState::Quit, _) => UiState::Quit,
-            (_, UiEvent::Quit) => UiState::Quit,
-            (UiState::MatchList(_), UiEvent::Back) => UiState::Quit,
+            (UiState::Quit, _) => (true, UiState::Quit),
+            (_, UiEvent::Quit) => (true, UiState::Quit),
+            (UiState::MatchList(_), UiEvent::Back) => (true, UiState::Quit),
             (mut state, UiEvent::Down(step)) => {
                 let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
@@ -124,7 +124,7 @@ impl<'a> UiState<'a> {
                         *scroll_state = scroll_state.position(pos);
                     }
                 }
-                state
+                (true, state)
             }
             (mut state, UiEvent::Up(step)) => {
                 let count = state.row_count(app);
@@ -134,7 +134,7 @@ impl<'a> UiState<'a> {
                         *scroll_state = scroll_state.position(pos);
                     }
                 }
-                state
+                (true, state)
             }
             (UiState::MatchList(state), UiEvent::Select) => {
                 let selected = state.selected();
@@ -148,12 +148,15 @@ impl<'a> UiState<'a> {
                 } else {
                     &app.matches[selected - 1]
                 };
-                UiState::Match(MatchState {
-                    result,
-                    table_state,
-                    scroll_state: ScrollbarState::new(result.count()),
-                    previous: Box::new(state.into()),
-                })
+                (
+                    true,
+                    UiState::Match(MatchState {
+                        result,
+                        table_state,
+                        scroll_state: ScrollbarState::new(result.count()),
+                        previous: Box::new(state.into()),
+                    }),
+                )
             }
             (UiState::Match(state), UiEvent::Select) => {
                 let selected = state.selected();
@@ -161,12 +164,15 @@ impl<'a> UiState<'a> {
                 table_state.select(Some(0));
 
                 let lines = state.result.grouped[selected].lines.as_slice();
-                UiState::Logs(LogsState {
-                    lines,
-                    table_state,
-                    scroll_state: ScrollbarState::new(lines.len()),
-                    previous: Box::new(state.into()),
-                })
+                (
+                    true,
+                    UiState::Logs(LogsState {
+                        lines,
+                        table_state,
+                        scroll_state: ScrollbarState::new(lines.len()),
+                        previous: Box::new(state.into()),
+                    }),
+                )
             }
             (UiState::Logs(state), UiEvent::Select) => {
                 let selected = state.selected();
@@ -182,13 +188,16 @@ impl<'a> UiState<'a> {
                 } else {
                     0
                 };
-                UiState::Log(LogState {
-                    log,
-                    full_line,
-                    trace_len,
-                    table_state,
-                    previous: Box::new(state.into()),
-                })
+                (
+                    true,
+                    UiState::Log(LogState {
+                        log,
+                        full_line,
+                        trace_len,
+                        table_state,
+                        previous: Box::new(state.into()),
+                    }),
+                )
             }
             (UiState::Logs(state), UiEvent::Copy) => {
                 let selected = state.selected();
@@ -198,20 +207,20 @@ impl<'a> UiState<'a> {
                 let line = &app.lines[state.lines[selected]];
                 let raw = app.get_line(line.index).unwrap_or_default();
                 copy_osc(raw);
-                UiState::Logs(state)
+                (false, UiState::Logs(state))
             }
             (UiState::Log(state), UiEvent::Copy) => {
                 let raw = app.get_line(state.log.index).unwrap_or_default();
                 copy_osc(raw);
-                UiState::Log(state)
+                (false, UiState::Log(state))
             }
             (
                 UiState::Match(MatchState { previous, .. })
                 | UiState::Logs(LogsState { previous, .. })
                 | UiState::Log(LogState { previous, .. }),
                 UiEvent::Back,
-            ) => *previous,
-            (state, _) => state,
+            ) => (true, *previous),
+            (state, _) => (false, state),
         }
     }
 }

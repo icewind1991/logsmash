@@ -33,11 +33,15 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
     let mut ui_state = UiState::new(&app);
+    let mut update = true;
 
     while !matches!(ui_state, UiState::Quit) {
-        terminal.draw(|frame| ui(frame, &app, &mut ui_state))?;
+        if update {
+            terminal.draw(|frame| ui(frame, &app, &mut ui_state))?;
+        }
+        update = false;
         if let Some(event) = handle_events(ui_state.page())? {
-            ui_state = ui_state.process(event, &app);
+            (update, ui_state) = ui_state.process(event, &app);
         }
     }
 
