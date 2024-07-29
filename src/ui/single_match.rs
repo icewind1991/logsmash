@@ -1,11 +1,12 @@
 use crate::app::{App, GroupedLines, LogMatch};
 use crate::ui::histogram::sparkline;
-use crate::ui::style::{TABLE_HEADER_STYLE, TABLE_SELECTED_STYLE};
+use crate::ui::style::TABLE_HEADER_STYLE;
+use crate::ui::table::ScrollbarTable;
 use ratatui::layout::Constraint;
 use ratatui::text::Text;
-use ratatui::widgets::{Cell, HighlightSpacing, Row, Table};
+use ratatui::widgets::{Cell, Row};
 
-pub fn grouped_lines(app: &App, log_match: &LogMatch) -> Table<'static> {
+pub fn grouped_lines(app: &App, log_match: &LogMatch) -> ScrollbarTable<'static> {
     let grouped = &log_match.grouped;
     let header = [
         Text::from("Level"),
@@ -27,11 +28,7 @@ pub fn grouped_lines(app: &App, log_match: &LogMatch) -> Table<'static> {
         Constraint::Length(10),
         Constraint::Min(10),
     ];
-    let table = Table::new(grouped.iter().map(|group| group_row(app, group)), widths)
-        .header(header)
-        .highlight_style(TABLE_SELECTED_STYLE)
-        .highlight_spacing(HighlightSpacing::Always);
-    table
+    ScrollbarTable::new(grouped.iter().map(|group| group_row(app, group)), widths).header(header)
 }
 
 fn group_row(app: &App, group: &GroupedLines) -> Row<'static> {

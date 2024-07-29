@@ -1,13 +1,14 @@
 use crate::app::{App, LogMatch};
 use crate::ui::histogram::sparkline;
-use crate::ui::style::{TABLE_HEADER_STYLE, TABLE_SELECTED_STYLE};
+use crate::ui::style::TABLE_HEADER_STYLE;
+use crate::ui::table::ScrollbarTable;
 use itertools::Either;
 use ratatui::prelude::*;
-use ratatui::widgets::{Cell, HighlightSpacing, Row, Table};
+use ratatui::widgets::{Cell, Row};
 use std::fmt::Write;
 use std::iter::{empty, once};
 
-pub fn match_list(app: &App) -> Table {
+pub fn match_list(app: &App) -> ScrollbarTable {
     let header = [
         Text::from("Statement"),
         Text::from("File"),
@@ -36,15 +37,13 @@ pub fn match_list(app: &App) -> Table {
         Either::Left(once(log_row(&app.unmatched, app, "Unmatched lines")))
     };
 
-    Table::new(
+    ScrollbarTable::new(
         once(all)
             .chain(app.matches.iter().map(|result| log_row(result, app, "")))
             .chain(unmatched),
         widths,
     )
     .header(header)
-    .highlight_style(TABLE_SELECTED_STYLE)
-    .highlight_spacing(HighlightSpacing::Always)
 }
 
 fn log_row<'a>(result: &LogMatch, app: &'a App, name: &'static str) -> Row<'a> {

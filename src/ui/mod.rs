@@ -13,7 +13,6 @@ use ratatui::crossterm::terminal::{
 };
 use ratatui::crossterm::{event, ExecutableCommand};
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Scrollbar, ScrollbarOrientation};
 use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
@@ -26,6 +25,7 @@ mod single_log;
 mod single_match;
 mod state;
 pub mod style;
+mod table;
 
 pub fn run_ui(app: App) -> Result<(), UiError> {
     enable_raw_mode()?;
@@ -91,11 +91,8 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
 
     match state {
         UiState::Quit => {}
-        UiState::MatchList(MatchListState {
-            table_state,
-            scroll_state,
-        }) => {
-            let selected = table_state.selected().unwrap_or(0);
+        UiState::MatchList(MatchListState { table_state }) => {
+            let selected = table_state.selected();
             let histogram = if selected == 0 {
                 &app.all.histogram
             } else if selected < app.matches.len() + 1 {
@@ -104,74 +101,29 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             } else {
                 &app.unmatched.histogram
             };
-            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓"));
 
             frame.render_widget(UiHistogram::new(histogram), layout[0]);
-            frame.render_stateful_widget(
-                match_list(app).block(Block::new().borders(Borders::RIGHT)),
-                layout[1],
-                table_state,
-            );
-            frame.render_stateful_widget(
-                scrollbar,
-                layout[1].inner(Margin {
-                    vertical: 1,
-                    horizontal: 0,
-                }),
-                scroll_state,
-            );
+            frame.render_stateful_widget(match_list(app), layout[1], table_state);
             frame.render_widget(footer(app, page), layout[2]);
         }
         UiState::Match(MatchState {
             result,
             table_state,
-            scroll_state,
             ..
         }) => {
-            let selected_group = &result.grouped[table_state.selected().unwrap_or_default()];
-            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓"));
+            let selected_group = &result.grouped[table_state.selected()];
 
             frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
-            frame.render_stateful_widget(
-                grouped_lines(app, result).block(Block::new().borders(Borders::RIGHT)),
-                layout[1],
-                table_state,
-            );
-            frame.render_stateful_widget(
-                scrollbar,
-                layout[1].inner(Margin {
-                    vertical: 1,
-                    horizontal: 0,
-                }),
-                scroll_state,
-            );
+            frame.render_stateful_widget(grouped_lines(app, result), layout[1], table_state);
             frame.render_widget(footer(app, page), layout[2]);
         }
         UiState::Logs(LogsState {
-            lines,
-            table_state,
-            scroll_state,
-            ..
+            lines, table_state, ..
         }) => {
-            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓"));
             frame.render_stateful_widget(
-                raw_logs(app, lines).block(Block::new().borders(Borders::RIGHT)),
+                raw_logs(app, lines),
                 layout[0].union(layout[1]),
                 table_state,
-            );
-            frame.render_stateful_widget(
-                scrollbar,
-                layout[0].union(layout[1]).inner(Margin {
-                    vertical: 1,
-                    horizontal: 0,
-                }),
-                scroll_state,
             );
             frame.render_widget(footer(app, page), layout[2]);
         }

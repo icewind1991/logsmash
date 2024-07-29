@@ -1,9 +1,9 @@
 use crate::app::{App, LogMatch};
 use crate::copy_osc;
 use crate::logline::{FullLogLine, LogLine};
+use crate::ui::table::ScrollbarTableState;
 use derive_more::From;
-use ratatui::widgets::{ScrollbarState, TableState};
-use table_state::TableStateExt;
+use ratatui::widgets::TableState;
 
 #[derive(Clone, From)]
 pub enum UiState<'a> {
@@ -16,41 +16,38 @@ pub enum UiState<'a> {
 
 #[derive(Clone)]
 pub struct MatchListState {
-    pub table_state: TableState,
-    pub scroll_state: ScrollbarState,
+    pub table_state: ScrollbarTableState,
 }
 
 impl MatchListState {
     fn selected(&self) -> usize {
-        self.table_state.selected().unwrap()
+        self.table_state.selected()
     }
 }
 
 #[derive(Clone)]
 pub struct MatchState<'a> {
     pub result: &'a LogMatch,
-    pub table_state: TableState,
-    pub scroll_state: ScrollbarState,
+    pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
 }
 
 impl<'a> MatchState<'a> {
     fn selected(&self) -> usize {
-        self.table_state.selected().unwrap()
+        self.table_state.selected()
     }
 }
 
 #[derive(Clone)]
 pub struct LogsState<'a> {
     pub lines: &'a [usize],
-    pub table_state: TableState,
-    pub scroll_state: ScrollbarState,
+    pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
 }
 
 impl<'a> LogsState<'a> {
     fn selected(&self) -> usize {
-        self.table_state.selected().unwrap()
+        self.table_state.selected()
     }
 }
 
@@ -59,7 +56,7 @@ pub struct LogState<'a> {
     pub trace_len: usize,
     pub log: &'a LogLine,
     pub full_line: FullLogLine,
-    pub table_state: TableState,
+    pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
 }
 
@@ -68,8 +65,7 @@ impl<'a> UiState<'a> {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
         UiState::MatchList(MatchListState {
-            table_state,
-            scroll_state: ScrollbarState::new(app.match_lines()),
+            table_state: ScrollbarTableState::new(app.match_lines()),
         })
     }
 
@@ -82,7 +78,7 @@ impl<'a> UiState<'a> {
         }
     }
 
-    fn table_state(&mut self) -> Option<&mut TableState> {
+    fn table_state(&mut self) -> Option<&mut ScrollbarTableState> {
         match self {
             UiState::MatchList(state) => Some(&mut state.table_state),
             UiState::Match(state) => Some(&mut state.table_state),
@@ -92,54 +88,25 @@ impl<'a> UiState<'a> {
         }
     }
 
-    fn scroll_state(&mut self) -> Option<&mut ScrollbarState> {
-        match self {
-            UiState::MatchList(state) => Some(&mut state.scroll_state),
-            UiState::Match(state) => Some(&mut state.scroll_state),
-            UiState::Logs(state) => Some(&mut state.scroll_state),
-            _ => None,
-        }
-    }
-
-    fn row_count(&self, app: &App) -> usize {
-        match self {
-            UiState::MatchList(_) => app.match_lines(),
-            UiState::Match(state) => state.result.grouped.len(),
-            UiState::Logs(state) => state.lines.len(),
-            UiState::Log(state) => state.trace_len,
-            _ => 0,
-        }
-    }
-
     pub fn process(self, event: UiEvent, app: &'a App) -> (bool, UiState) {
         match (self, event) {
             (UiState::Quit, _) => (true, UiState::Quit),
             (_, UiEvent::Quit) => (true, UiState::Quit),
             (UiState::MatchList(_), UiEvent::Back) => (true, UiState::Quit),
             (mut state, UiEvent::Down(step)) => {
-                let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
-                    let pos = table_state.down(count, step);
-                    if let Some(scroll_state) = state.scroll_state() {
-                        *scroll_state = scroll_state.position(pos);
-                    }
+                    table_state.down(step);
                 }
                 (true, state)
             }
             (mut state, UiEvent::Up(step)) => {
-                let count = state.row_count(app);
                 if let Some(table_state) = state.table_state() {
-                    let pos = table_state.up(count, step);
-                    if let Some(scroll_state) = state.scroll_state() {
-                        *scroll_state = scroll_state.position(pos);
-                    }
+                    table_state.up(step);
                 }
                 (true, state)
             }
             (UiState::MatchList(state), UiEvent::Select) => {
                 let selected = state.selected();
-                let mut table_state = TableState::default();
-                table_state.select(Some(0));
 
                 let result = if selected == 0 {
                     &app.all
@@ -148,12 +115,12 @@ impl<'a> UiState<'a> {
                 } else {
                     &app.matches[selected - 1]
                 };
+                let table_state = ScrollbarTableState::new(result.grouped.len());
                 (
                     true,
                     UiState::Match(MatchState {
                         result,
                         table_state,
-                        scroll_state: ScrollbarState::new(result.count()),
                         previous: Box::new(state.into()),
                     }),
                 )
@@ -164,20 +131,18 @@ impl<'a> UiState<'a> {
                 table_state.select(Some(0));
 
                 let lines = state.result.grouped[selected].lines.as_slice();
+                let table_state = ScrollbarTableState::new(lines.len());
                 (
                     true,
                     UiState::Logs(LogsState {
                         lines,
                         table_state,
-                        scroll_state: ScrollbarState::new(lines.len()),
                         previous: Box::new(state.into()),
                     }),
                 )
             }
             (UiState::Logs(state), UiEvent::Select) => {
                 let selected = state.selected();
-                let mut table_state = TableState::default();
-                table_state.select(Some(0));
 
                 let line = state.lines[selected];
                 let log = &app.lines[line];
@@ -188,6 +153,8 @@ impl<'a> UiState<'a> {
                 } else {
                     0
                 };
+
+                let table_state = ScrollbarTableState::new(trace_len);
                 (
                     true,
                     UiState::Log(LogState {
@@ -240,45 +207,4 @@ pub enum UiPage {
     Match,
     Logs,
     Log,
-}
-
-mod table_state {
-    use ratatui::widgets::TableState;
-
-    pub trait TableStateExt {
-        fn up(&mut self, count: usize, step: usize) -> usize;
-        fn down(&mut self, count: usize, step: usize) -> usize;
-    }
-
-    impl TableStateExt for TableState {
-        fn up(&mut self, count: usize, step: usize) -> usize {
-            let current = self.selected().unwrap_or(0);
-            let after = if step > current {
-                if step == 1 {
-                    count - 1
-                } else {
-                    0
-                }
-            } else {
-                current - step
-            };
-            self.select(Some(after));
-            after
-        }
-
-        fn down(&mut self, count: usize, step: usize) -> usize {
-            let current = self.selected().unwrap_or(0);
-            let after = if step >= count - current {
-                if step == 1 {
-                    0
-                } else {
-                    count - 1
-                }
-            } else {
-                current + step
-            };
-            self.select(Some(after));
-            after
-        }
-    }
 }

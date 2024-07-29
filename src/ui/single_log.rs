@@ -1,8 +1,9 @@
 use crate::app::App;
 use crate::logline::{FullException, FullLogLine, LogLine, Trace};
-use crate::ui::style::{TABLE_HEADER_STYLE, TABLE_SELECTED_STYLE, TIME_FORMAT};
+use crate::ui::style::{TABLE_HEADER_STYLE, TIME_FORMAT};
+use crate::ui::table::{ScrollbarTable, ScrollbarTableState};
 use ratatui::prelude::*;
-use ratatui::widgets::{Cell, HighlightSpacing, Paragraph, Row, Table, TableState, Wrap};
+use ratatui::widgets::{Cell, Paragraph, Row, Wrap};
 use std::iter::once;
 use time::format_description::well_known::Iso8601;
 
@@ -17,7 +18,7 @@ pub struct SingleLog {
 }
 
 impl StatefulWidget for SingleLog {
-    type State = TableState;
+    type State = ScrollbarTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
     where
@@ -48,7 +49,7 @@ impl StatefulWidget for SingleLog {
     }
 }
 
-pub fn render_exception(exception: &FullException) -> Table {
+pub fn render_exception(exception: &FullException) -> ScrollbarTable {
     let header = [
         Text::from("File"),
         Text::from("Line").alignment(Alignment::Right),
@@ -66,11 +67,7 @@ pub fn render_exception(exception: &FullException) -> Table {
         Constraint::Percentage(60),
     ];
     let rows = exception.stack().flat_map(exception_trace);
-    let table = Table::new(rows, widths)
-        .header(header)
-        .highlight_style(TABLE_SELECTED_STYLE)
-        .highlight_spacing(HighlightSpacing::Always);
-    table
+    ScrollbarTable::new(rows, widths).header(header)
 }
 
 fn exception_trace(exception: &FullException) -> impl Iterator<Item = Row> + '_ {

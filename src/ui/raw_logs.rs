@@ -1,12 +1,13 @@
 use crate::app::App;
 use crate::logline::LogLine;
-use crate::ui::style::{TABLE_HEADER_STYLE, TABLE_SELECTED_STYLE, TIME_FORMAT};
+use crate::ui::style::{TABLE_HEADER_STYLE, TIME_FORMAT};
+use crate::ui::table::ScrollbarTable;
 use ratatui::layout::{Alignment, Constraint};
 use ratatui::text::Text;
-use ratatui::widgets::{Cell, HighlightSpacing, Row, Table};
+use ratatui::widgets::{Cell, Row};
 use time::format_description::well_known::Iso8601;
 
-pub fn raw_logs(app: &App, lines: &[usize]) -> Table<'static> {
+pub fn raw_logs(app: &App, lines: &[usize]) -> ScrollbarTable<'static> {
     let lines = lines.iter().copied().map(|i| &app.lines[i]);
     let header = [
         Text::from("Level"),
@@ -26,11 +27,7 @@ pub fn raw_logs(app: &App, lines: &[usize]) -> Table<'static> {
         Constraint::Percentage(100),
         Constraint::Length(27),
     ];
-    let table = Table::new(lines.map(log_row), widths)
-        .header(header)
-        .highlight_style(TABLE_SELECTED_STYLE)
-        .highlight_spacing(HighlightSpacing::Always);
-    table
+    ScrollbarTable::new(lines.map(log_row), widths).header(header)
 }
 
 fn log_row(line: &LogLine) -> Row<'static> {
