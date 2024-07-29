@@ -31,6 +31,7 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    terminal.clear().ok();
 
     let mut ui_state = UiState::new(&app);
     let mut update = true;
