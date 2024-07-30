@@ -1,4 +1,5 @@
 use hdrhistogram::Histogram;
+use std::cmp::max;
 use time::OffsetDateTime;
 
 pub struct TimeGraph {
@@ -11,10 +12,13 @@ impl TimeGraph {
     pub fn new(start: OffsetDateTime, end: OffsetDateTime) -> Self {
         let histogram = Histogram::new_with_bounds(
             1,
-            end.unix_timestamp() as u64 - start.unix_timestamp() as u64 + 1,
+            max(
+                end.unix_timestamp() as u64 - start.unix_timestamp() as u64 + 1,
+                4,
+            ),
             3,
         )
-        .unwrap();
+        .expect("Failed to build histogram");
         TimeGraph {
             histogram,
             start: start.unix_timestamp() as u64,
@@ -32,7 +36,7 @@ impl TimeGraph {
         let step = (self.end - self.start + 1) / buckets as u64;
 
         self.histogram
-            .iter_linear(step)
+            .iter_linear(max(1, step))
             .map(|val| val.count_since_last_iteration())
     }
 
