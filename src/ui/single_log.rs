@@ -73,9 +73,9 @@ pub fn render_exception(exception: &FullException) -> ScrollbarTable {
 
 fn exception_trace(exception: &FullException) -> impl Iterator<Item = Row> + '_ {
     let exception_row = Row::new([
-        Text::from(""),
-        Text::from(exception.line.to_string()).alignment(Alignment::Right),
         Text::from(exception.file.as_str()),
+        Text::from(exception.line.to_string()).alignment(Alignment::Right),
+        Text::from(""),
     ])
     .style(TABLE_HEADER_STYLE);
     let trace_rows = exception.trace.iter().map(trace_line);
