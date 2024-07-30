@@ -39,13 +39,32 @@ impl StatefulWidget for SingleLog {
 
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Min(7), Constraint::Percentage(100)])
+            .constraints(vec![
+                Constraint::Min(7),
+                Constraint::Min(5),
+                Constraint::Percentage(100),
+            ])
             .split(area);
 
         par.render(layout[0], buf);
 
         if let Some(exception) = &self.line.exception {
-            StatefulWidget::render(render_exception(exception), layout[1], buf, state);
+            if self.line.message.contains(&exception.message) {
+                StatefulWidget::render(
+                    render_exception(exception),
+                    layout[1].union(layout[2]),
+                    buf,
+                    state,
+                );
+            } else {
+                let ex_par = Paragraph::new(format!(
+                    "\n{}:\n  {}",
+                    exception.exception, exception.message
+                ))
+                .wrap(Wrap::default());
+                ex_par.render(layout[1], buf);
+                StatefulWidget::render(render_exception(exception), layout[2], buf, state);
+            }
         }
     }
 }
