@@ -64,7 +64,6 @@ pub struct Exception {
     pub exception: String,
     pub file: String,
     pub line: usize,
-    pub previous: Option<Box<Exception>>,
 }
 
 impl Hash for Exception {

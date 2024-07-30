@@ -267,7 +267,6 @@ fn test_matcher() {
                     exception: "Bar\\FooException".into(),
                     file: "short".into(),
                     line: 68,
-                    previous: None,
                 }),
                 time: OffsetDateTime::now_utc(),
                 index: 0,
