@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::logline::{FullException, FullLogLine, LogLine, Trace};
+use crate::parse_line_full;
 use crate::ui::style::{TABLE_HEADER_STYLE, TIME_FORMAT};
 use crate::ui::table::{ScrollbarTable, ScrollbarTableState};
 use ratatui::prelude::*;
@@ -9,7 +10,7 @@ use time::format_description::well_known::Iso8601;
 
 pub fn single_log(app: &App, line: &LogLine) -> SingleLog {
     let raw_line = app.get_line(line.index).unwrap();
-    let line: FullLogLine = serde_json::from_str(raw_line).unwrap();
+    let line = parse_line_full(raw_line).unwrap();
     SingleLog { line }
 }
 

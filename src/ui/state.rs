@@ -1,7 +1,7 @@
 use crate::app::{App, LogMatch};
-use crate::copy_osc;
 use crate::logline::{FullLogLine, LogLine};
 use crate::ui::table::ScrollbarTableState;
+use crate::{copy_osc, parse_line_full};
 use derive_more::From;
 use ratatui::widgets::TableState;
 
@@ -147,7 +147,7 @@ impl<'a> UiState<'a> {
                 let line = state.lines[selected];
                 let log = &app.lines[line];
                 let raw_line = app.get_line(log.index).unwrap();
-                let full_line: FullLogLine = serde_json::from_str(raw_line).unwrap();
+                let full_line = parse_line_full(raw_line).unwrap();
                 let trace_len = if let Some(exception) = &full_line.exception {
                     exception.stack().map(|e| 1 + e.trace.len()).sum()
                 } else {

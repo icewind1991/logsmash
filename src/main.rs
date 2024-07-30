@@ -1,7 +1,7 @@
 use crate::app::{App, LogMatch};
 use crate::error::LogError;
 use crate::logfile::LogFile;
-use crate::logline::LogLine;
+use crate::logline::{Exception, FullException, FullLogLine, LogLine};
 use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use base64::prelude::*;
@@ -48,7 +48,7 @@ fn main() -> MainResult {
 
     let mut counts: HashMap<MatchResult, Vec<usize>> = HashMap::new();
     let first = lines.next().unwrap();
-    let first_parsed: LogLine = match serde_json::from_str(first) {
+    let first_parsed = match parse_line(first) {
         Ok(first_parsed) => first_parsed,
         Err(e) => {
             eprintln!("Failed to parse the first line in the log: {:#}", e);
@@ -72,7 +72,7 @@ fn main() -> MainResult {
         .enumerate()
         .par_bridge()
         .flat_map(|(index, line)| {
-            let mut parsed = serde_json::from_str::<LogLine>(line).ok()?;
+            let mut parsed = parse_line(line).ok()?;
             parsed.index = index;
             Some(parsed)
         })
@@ -142,4 +142,38 @@ fn main() -> MainResult {
 
 fn copy_osc(text: &str) {
     print!("\x1B]52;c;{}\x07", BASE64_STANDARD.encode(text))
+}
+
+fn parse_line(mut line: &str) -> Result<LogLine, serde_json::Error> {
+    if let Some(pos) = line.find('{') {
+        line = &line[pos..];
+    }
+
+    let mut res = serde_json::from_str::<LogLine>(line);
+    if let Ok(line) = &mut res {
+        if line.exception.is_none() && line.message.starts_with("{\"Exception\":") {
+            if let Ok(exception) = serde_json::from_str::<Exception>(&line.message) {
+                line.message = exception.message.clone();
+                line.exception = Some(exception);
+            }
+        }
+    }
+    res
+}
+
+fn parse_line_full(mut line: &str) -> Result<FullLogLine, serde_json::Error> {
+    if let Some(pos) = line.find('{') {
+        line = &line[pos..];
+    }
+
+    let mut res = serde_json::from_str::<FullLogLine>(line);
+    if let Ok(line) = &mut res {
+        if line.exception.is_none() && line.message.starts_with("{\"Exception\":") {
+            if let Ok(exception) = serde_json::from_str::<FullException>(&line.message) {
+                line.message = exception.message.clone();
+                line.exception = Some(exception);
+            }
+        }
+    }
+    res
 }
