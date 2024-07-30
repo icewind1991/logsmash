@@ -21,7 +21,7 @@ impl LogMatch {
     pub fn new(index: usize, statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
-            pattern: Regex::new(statement.regex).unwrap(),
+            pattern: Regex::new(statement.regex).expect("Invalid regex"),
             pattern_length: statement.regex.len(),
             has_meaningful_message: statement
                 .regex

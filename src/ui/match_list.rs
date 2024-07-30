@@ -52,9 +52,9 @@ fn log_row<'a>(result: &'a LogMatch, app: &'a App, name: &'static str) -> Row<'a
         let mut lines = String::new();
         for index in match_result.iter() {
             let statement = app.log_statements.get(index).expect("invalid match index");
-            writeln!(&mut message, "{}", statement.message()).unwrap();
-            writeln!(&mut paths, "{}", statement.path()).unwrap();
-            writeln!(&mut lines, "{}", statement.line).unwrap();
+            writeln!(&mut message, "{}", statement.message()).ok();
+            writeln!(&mut paths, "{}", statement.path()).ok();
+            writeln!(&mut lines, "{}", statement.line).ok();
         }
         Row::new([
             Text::from(message),

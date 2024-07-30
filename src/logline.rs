@@ -4,8 +4,16 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use time::format_description::well_known::iso8601::{Config, EncodedConfig, TimePrecision};
+use time::format_description::well_known::Iso8601;
 use time::OffsetDateTime;
 use tinystr::TinyAsciiStr;
+
+pub const TIME_FORMAT: EncodedConfig = Config::DEFAULT
+    .set_time_precision(TimePrecision::Second {
+        decimal_digits: None,
+    })
+    .encode();
 
 #[derive(Deserialize)]
 pub struct LogLine {
@@ -29,6 +37,11 @@ impl LogLine {
         self.app.hash(&mut hasher);
         hasher.finish()
     }
+}
+
+pub fn format_time(time: OffsetDateTime) -> String {
+    time.format(&Iso8601::<TIME_FORMAT>)
+        .unwrap_or_else(|_| "Invalid time".into())
 }
 
 impl LogLine {

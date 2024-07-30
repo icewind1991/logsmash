@@ -1,11 +1,10 @@
 use crate::app::App;
-use crate::logline::LogLine;
-use crate::ui::style::{TABLE_HEADER_STYLE, TIME_FORMAT};
+use crate::logline::{format_time, LogLine};
+use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
 use ratatui::layout::{Alignment, Constraint};
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
-use time::format_description::well_known::Iso8601;
 
 pub fn raw_logs<'a>(app: &'a App, lines: &[usize]) -> ScrollbarTable<'a> {
     let lines = lines.iter().copied().map(|i| &app.lines[i]);
@@ -35,6 +34,6 @@ fn log_row(line: &LogLine) -> Row {
         Text::from(line.level.as_str()),
         Text::from(line.app.as_str()),
         Text::from(line.display()),
-        Text::from(line.time.format(&Iso8601::<TIME_FORMAT>).unwrap()).alignment(Alignment::Right),
+        Text::from(format_time(line.time)).alignment(Alignment::Right),
     ])
 }

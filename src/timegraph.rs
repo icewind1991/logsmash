@@ -29,7 +29,7 @@ impl TimeGraph {
     pub fn add(&mut self, time: OffsetDateTime) {
         self.histogram
             .record(time.unix_timestamp() as u64 - self.start + 1)
-            .unwrap()
+            .ok();
     }
 
     pub fn counts(&self, buckets: usize) -> impl Iterator<Item = u64> + '_ {
@@ -45,7 +45,7 @@ impl TimeGraph {
         for (value, count) in values.iter_mut().zip(self.counts(N)) {
             *value = count;
         }
-        let max = values.iter().copied().max().unwrap() as f64;
+        let max = values.iter().copied().max().unwrap_or_default() as f64;
         let len = SPARKS.len() as f64 - 1.0;
         values
             .iter()

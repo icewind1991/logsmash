@@ -47,7 +47,7 @@ fn main() -> MainResult {
     let mut lines = log_file.iter();
 
     let mut counts: HashMap<MatchResult, Vec<usize>> = HashMap::new();
-    let first = lines.next().unwrap();
+    let first = lines.next().unwrap_or_default();
     let first_parsed = match parse_line(first) {
         Ok(first_parsed) => first_parsed,
         Err(e) => {

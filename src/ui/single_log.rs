@@ -1,21 +1,20 @@
 use crate::app::App;
-use crate::logline::{FullException, FullLogLine, LogLine, Trace};
+use crate::logline::{format_time, FullException, FullLogLine, LogLine, Trace};
 use crate::parse_line_full;
-use crate::ui::style::{TABLE_HEADER_STYLE, TIME_FORMAT};
+use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::{ScrollbarTable, ScrollbarTableState};
 use ratatui::prelude::*;
 use ratatui::widgets::{Cell, Paragraph, Row, Wrap};
 use std::iter::once;
-use time::format_description::well_known::Iso8601;
 
 pub fn single_log(app: &App, line: &LogLine) -> SingleLog {
-    let raw_line = app.get_line(line.index).unwrap();
-    let line = parse_line_full(raw_line).unwrap();
+    let raw_line = app.get_line(line.index);
+    let line = raw_line.and_then(|raw_line| parse_line_full(raw_line).ok());
     SingleLog { line }
 }
 
 pub struct SingleLog {
-    line: FullLogLine,
+    line: Option<FullLogLine>,
 }
 
 impl StatefulWidget for SingleLog {
@@ -25,46 +24,51 @@ impl StatefulWidget for SingleLog {
     where
         Self: Sized,
     {
-        let par = Paragraph::new(format!(
-            "{}\n\n  {} {}\n  {}\n\n  from {} by {} at {}",
-            self.line.message,
-            self.line.method,
-            self.line.url,
-            self.line.user_agent,
-            self.line.remote_address,
-            self.line.user,
-            self.line.time.format(&Iso8601::<TIME_FORMAT>).unwrap()
-        ))
-        .wrap(Wrap::default());
+        if let Some(line) = self.line {
+            let par = Paragraph::new(format!(
+                "{}\n\n  {} {}\n  {}\n\n  from {} by {} at {}",
+                line.message,
+                line.method,
+                line.url,
+                line.user_agent,
+                line.remote_address,
+                line.user,
+                format_time(line.time),
+            ))
+            .wrap(Wrap::default());
 
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Min(7),
-                Constraint::Min(5),
-                Constraint::Percentage(100),
-            ])
-            .split(area);
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![
+                    Constraint::Min(7),
+                    Constraint::Min(5),
+                    Constraint::Percentage(100),
+                ])
+                .split(area);
 
-        par.render(layout[0], buf);
+            par.render(layout[0], buf);
 
-        if let Some(exception) = &self.line.exception {
-            if self.line.message.contains(&exception.message) {
-                StatefulWidget::render(
-                    render_exception(exception),
-                    layout[1].union(layout[2]),
-                    buf,
-                    state,
-                );
-            } else {
-                let ex_par = Paragraph::new(format!(
-                    "\n{}:\n  {}",
-                    exception.exception, exception.message
-                ))
-                .wrap(Wrap::default());
-                ex_par.render(layout[1], buf);
-                StatefulWidget::render(render_exception(exception), layout[2], buf, state);
+            if let Some(exception) = &line.exception {
+                if line.message.contains(&exception.message) {
+                    StatefulWidget::render(
+                        render_exception(exception),
+                        layout[1].union(layout[2]),
+                        buf,
+                        state,
+                    );
+                } else {
+                    let ex_par = Paragraph::new(format!(
+                        "\n{}:\n  {}",
+                        exception.exception, exception.message
+                    ))
+                    .wrap(Wrap::default());
+                    ex_par.render(layout[1], buf);
+                    StatefulWidget::render(render_exception(exception), layout[2], buf, state);
+                }
             }
+        } else {
+            let par = Paragraph::new("Failed to parse log line").wrap(Wrap::default());
+            par.render(area, buf);
         }
     }
 }

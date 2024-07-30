@@ -57,7 +57,7 @@ impl ScrollbarTableState {
     }
 
     pub fn selected(&self) -> usize {
-        self.table.selected().unwrap()
+        self.table.selected().unwrap_or_default()
     }
 
     pub fn up(&mut self, step: usize) -> usize {
