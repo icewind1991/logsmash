@@ -52,6 +52,7 @@ fn main() -> MainResult {
         Ok(first_parsed) => first_parsed,
         Err(e) => {
             eprintln!("Failed to parse the first line in the log: {:#}", e);
+            eprintln!("{first}");
             return Ok(());
         }
     };

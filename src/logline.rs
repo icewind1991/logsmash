@@ -24,8 +24,63 @@ pub struct LogLine {
     pub message: String,
     pub exception: Option<Exception>,
     pub app: TinyAsciiStr<32>,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "date")]
     pub time: OffsetDateTime,
+}
+
+mod date {
+    use serde::de::Error;
+    use serde::{Deserialize, Deserializer};
+    use time::format_description::well_known::Iso8601;
+    use time::format_description::well_known::Rfc2822;
+    use time::format_description::well_known::Rfc3339;
+    use time::format_description::BorrowedFormatItem;
+    use time::macros::format_description;
+    use time::parsing::Parsable;
+    use time::{OffsetDateTime, PrimitiveDateTime};
+
+    const FORMATS: &[&[BorrowedFormatItem]] = &[format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second]"
+    )];
+
+    fn try_format(str: &str, format: &(impl Parsable + ?Sized)) -> Option<OffsetDateTime> {
+        if let Ok(date) = OffsetDateTime::parse(str, format) {
+            Some(date)
+        } else if let Ok(date) = PrimitiveDateTime::parse(str, format) {
+            Some(date.assume_utc())
+        } else {
+            None
+        }
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<OffsetDateTime, D::Error> {
+        let str = <&str>::deserialize(deserializer)?;
+
+        if let Some(date) = try_format(str, &Iso8601::DATE_TIME_OFFSET) {
+            return Ok(date);
+        }
+        if let Some(date) = try_format(str, &Iso8601::DATE_TIME) {
+            return Ok(date);
+        }
+        if let Some(date) = try_format(str, &Rfc3339) {
+            return Ok(date);
+        }
+        if let Some(date) = try_format(str, &Rfc2822) {
+            return Ok(date);
+        }
+
+        for format in FORMATS {
+            if let Some(date) = try_format(str, format) {
+                return Ok(date);
+            }
+        }
+        return Err(D::Error::custom(format_args!(
+            "Failed to parse date: {}",
+            str
+        )));
+    }
 }
 
 impl LogLine {
@@ -93,7 +148,7 @@ pub struct FullLogLine {
     #[serde(rename = "reqId")]
     pub request_id: TinyAsciiStr<32>,
     pub level: LogLevel,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "date")]
     pub time: OffsetDateTime,
     #[serde(rename = "remoteAddr")]
     pub remote_address: String,
