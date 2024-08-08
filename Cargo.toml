@@ -14,6 +14,7 @@ log = "0.4.22"
 clap = { version = "=4.1.3", features = ["derive"] }
 logsmash-data = { version = "0.1.0", path = "./data" }
 zip = "2.1.5"
+flate2 = "1.0.31"
 itertools = "0.13.0"
 ratatui = "0.27.0"
 tinystr = { version = "0.7.6", features = ["serde"] }

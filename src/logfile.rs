@@ -1,4 +1,5 @@
 use crate::error::ReadError;
+use flate2::read::GzDecoder;
 use std::fs::File;
 use std::io::Read;
 use zip::ZipArchive;
@@ -21,6 +22,12 @@ impl LogFile {
             let mut log = zip.by_index(0)?;
             let mut content = String::with_capacity(log.size() as usize);
             log.read_to_string(&mut content)?;
+
+            Ok(LogFile { content })
+        } else if path.ends_with(".gz") {
+            let mut decoder = GzDecoder::new(file);
+            let mut content = String::new();
+            decoder.read_to_string(&mut content)?;
 
             Ok(LogFile { content })
         } else {
