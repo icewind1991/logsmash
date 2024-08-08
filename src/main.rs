@@ -102,7 +102,7 @@ fn main() -> MainResult {
 
         parsed_lines.push(parsed);
     }
-    let error_count = log_file.iter().count();
+    let error_count = log_file.iter().count() - parsed_lines.len();
 
     let mut matched_lines: Vec<(_, _)> = counts.into_iter().collect();
     matched_lines.sort_by_key(|(_, lines)| lines.len());
