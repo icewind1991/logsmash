@@ -11,6 +11,7 @@ pub enum UiState<'a> {
     Match(MatchState<'a>),
     Logs(LogsState<'a>),
     Log(LogState<'a>),
+    Errors(ErrorState<'a>),
     Quit,
 }
 
@@ -45,6 +46,12 @@ pub struct LogsState<'a> {
     pub previous: Box<UiState<'a>>,
 }
 
+#[derive(Clone)]
+pub struct ErrorState<'a> {
+    pub table_state: ScrollbarTableState,
+    pub previous: Box<UiState<'a>>,
+}
+
 impl<'a> LogsState<'a> {
     fn selected(&self) -> usize {
         self.table_state.selected()
@@ -75,6 +82,7 @@ impl<'a> UiState<'a> {
             UiState::Match(_) => UiPage::Match,
             UiState::Logs(_) => UiPage::Logs,
             UiState::Log(_) => UiPage::Log,
+            UiState::Errors(_) => UiPage::Errors,
         }
     }
 
@@ -84,6 +92,7 @@ impl<'a> UiState<'a> {
             UiState::Match(state) => Some(&mut state.table_state),
             UiState::Logs(state) => Some(&mut state.table_state),
             UiState::Log(state) => Some(&mut state.table_state),
+            UiState::Errors(state) => Some(&mut state.table_state),
             _ => None,
         }
     }
@@ -120,6 +129,16 @@ impl<'a> UiState<'a> {
                     true,
                     UiState::Match(MatchState {
                         result,
+                        table_state,
+                        previous: Box::new(state.into()),
+                    }),
+                )
+            }
+            (UiState::MatchList(state), UiEvent::Errors) => {
+                let table_state = ScrollbarTableState::new(app.error_lines.len());
+                (
+                    true,
+                    UiState::Errors(ErrorState {
                         table_state,
                         previous: Box::new(state.into()),
                     }),
@@ -181,10 +200,20 @@ impl<'a> UiState<'a> {
                 copy_osc(raw);
                 (false, UiState::Log(state))
             }
+            (UiState::Errors(state), UiEvent::Copy) => {
+                let raw = app
+                    .error_lines
+                    .get(state.table_state.selected())
+                    .map(|(line, _)| line.as_str())
+                    .unwrap_or_default();
+                copy_osc(raw);
+                (false, UiState::Errors(state))
+            }
             (
                 UiState::Match(MatchState { previous, .. })
                 | UiState::Logs(LogsState { previous, .. })
-                | UiState::Log(LogState { previous, .. }),
+                | UiState::Log(LogState { previous, .. })
+                | UiState::Errors(ErrorState { previous, .. }),
                 UiEvent::Back,
             ) => (true, *previous),
             (state, _) => (false, state),
@@ -197,6 +226,7 @@ pub enum UiEvent {
     Back,
     Up(usize),
     Down(usize),
+    Errors,
     Select,
     Copy,
 }
@@ -207,4 +237,5 @@ pub enum UiPage {
     Match,
     Logs,
     Log,
+    Errors,
 }

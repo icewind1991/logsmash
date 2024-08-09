@@ -72,35 +72,48 @@ fn main() -> MainResult {
     let mut results: Vec<_> = lines
         .enumerate()
         .par_bridge()
-        .flat_map(|(index, line)| {
-            let mut parsed = parse_line(line).ok()?;
-            parsed.index = index;
-            Some(parsed)
+        .map(|(index, line)| {
+            let mut parsed = parse_line(line);
+            if let Ok(parsed) = parsed.as_mut() {
+                parsed.index = index;
+            };
+            parsed.map_err(|err| (index, line, err))
         })
         .map(|parsed| {
-            let log_match = matcher.match_log(&parsed);
-            (parsed, log_match)
+            parsed.map(|parsed| {
+                let log_match = matcher.match_log(&parsed);
+                (parsed, log_match)
+            })
         })
         .collect();
 
-    results.sort_by_key(|(line, _)| line.index);
+    results.sort_by_key(|res| match res {
+        Ok((line, _)) => line.index,
+        Err((index, _, _)) => *index,
+    });
 
+    let mut error_lines = Vec::with_capacity(32);
     let mut parsed_lines = Vec::with_capacity(1024);
     let mut unmatched_lines = Vec::with_capacity(256);
 
-    for (parsed_index, result) in results.into_iter().enumerate() {
-        let parsed = match result {
-            (parsed, Some(match_result)) => {
-                counts.entry(match_result).or_default().push(parsed_index);
-                parsed
-            }
-            (parsed, None) => {
-                unmatched_lines.push(parsed_index);
-                parsed
-            }
-        };
+    let mut parsed_index = 0;
 
-        parsed_lines.push(parsed);
+    for result in results.into_iter() {
+        match result {
+            Ok((parsed, Some(match_result))) => {
+                counts.entry(match_result).or_default().push(parsed_index);
+                parsed_lines.push(parsed);
+                parsed_index += 1;
+            }
+            Ok((parsed, None)) => {
+                unmatched_lines.push(parsed_index);
+                parsed_lines.push(parsed);
+                parsed_index += 1;
+            }
+            Err((_index, line, e)) => {
+                error_lines.push((line.to_string(), e));
+            }
+        }
     }
     let error_count = log_file.iter().count() - parsed_lines.len();
 
@@ -125,6 +138,7 @@ fn main() -> MainResult {
         last_date: parsed_lines.last().unwrap().time,
         lines: parsed_lines,
         log_statements: statements,
+        error_lines,
         matches,
         unmatched,
         all,

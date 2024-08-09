@@ -1,12 +1,15 @@
 use crate::app::App;
 use crate::error::UiError;
+use crate::ui::error_list::error_list;
 use crate::ui::footer::footer;
 use crate::ui::histogram::UiHistogram;
 use crate::ui::match_list::match_list;
 use crate::ui::raw_logs::raw_logs;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
-use crate::ui::state::{LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState};
+use crate::ui::state::{
+    ErrorState, LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState,
+};
 use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -17,6 +20,7 @@ use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
 
+mod error_list;
 mod footer;
 mod histogram;
 mod match_list;
@@ -61,6 +65,7 @@ fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
                     }
                     KeyCode::Char('q') => Some(UiEvent::Quit),
                     KeyCode::Esc => Some(UiEvent::Back),
+                    KeyCode::Char('e') if page == UiPage::MatchList => Some(UiEvent::Errors),
                     KeyCode::Left if page != UiPage::MatchList => Some(UiEvent::Back),
                     KeyCode::Down => Some(UiEvent::Down(1)),
                     KeyCode::Up => Some(UiEvent::Up(1)),
@@ -135,6 +140,10 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
                 layout[0].union(layout[1]),
                 table_state,
             );
+            frame.render_widget(footer(app, page), layout[2]);
+        }
+        UiState::Errors(ErrorState { table_state, .. }) => {
+            frame.render_stateful_widget(error_list(app), layout[0].union(layout[1]), table_state);
             frame.render_widget(footer(app, page), layout[2]);
         }
     }

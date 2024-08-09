@@ -16,6 +16,7 @@ pub struct App {
     pub all: LogMatch,
     pub unmatched: LogMatch,
     pub log_file: LogFile,
+    pub error_lines: Vec<(String, serde_json::Error)>,
 }
 
 impl App {
