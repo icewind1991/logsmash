@@ -3,9 +3,10 @@ use crate::ui::state::UiPage;
 use ratatui::layout::Constraint;
 use ratatui::prelude::Style;
 use ratatui::style::palette::tailwind;
+use ratatui::text::Text;
 use ratatui::widgets::{Row, Table};
 
-pub fn footer(app: &App, page: UiPage) -> Table {
+pub fn footer<'a>(app: &App<'a>, page: UiPage) -> Table<'a> {
     let footer_style = Style::default()
         .bg(tailwind::BLACK)
         .fg(tailwind::GREEN.c600);
@@ -18,9 +19,9 @@ pub fn footer(app: &App, page: UiPage) -> Table {
 
     Table::new(
         [Row::new([
-            help(page).to_string(),
-            format!("{} unmatched items", app.unmatched.lines.len()),
-            format!("{} parse errors", app.error_count),
+            Text::from(help(page)),
+            Text::from(format!("{} unmatched items", app.unmatched.lines.len())),
+            Text::from(format!("{} parse errors", app.error_count)),
         ])],
         widths,
     )

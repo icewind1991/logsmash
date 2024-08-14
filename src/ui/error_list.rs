@@ -5,7 +5,7 @@ use ratatui::layout::Constraint;
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 
-pub fn error_list(app: &App) -> ScrollbarTable {
+pub fn error_list<'a>(app: &'a App<'a>) -> ScrollbarTable<'a> {
     let header = [Text::from("Error"), Text::from("Line")]
         .into_iter()
         .map(Cell::from)

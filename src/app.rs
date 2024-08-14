@@ -6,20 +6,20 @@ use logsmash_data::StatementList;
 use std::collections::BTreeMap;
 use time::OffsetDateTime;
 
-pub struct App {
+pub struct App<'a> {
     pub first_date: OffsetDateTime,
     pub last_date: OffsetDateTime,
-    pub lines: Vec<LogLine>,
+    pub lines: Vec<LogLine<'a>>,
     pub log_statements: StatementList,
     pub matches: Vec<LogMatch>,
     pub error_count: usize,
     pub all: LogMatch,
     pub unmatched: LogMatch,
-    pub log_file: LogFile,
+    pub log_file: &'a LogFile,
     pub error_lines: Vec<(String, serde_json::Error)>,
 }
 
-impl App {
+impl<'a> App<'a> {
     pub fn match_lines(&self) -> usize {
         let unmatched_line_count = if self.unmatched.lines.is_empty() {
             0
@@ -29,7 +29,7 @@ impl App {
         self.matches.len() + 1 + unmatched_line_count
     }
 
-    pub fn get_line(&self, index: usize) -> Option<&str> {
+    pub fn get_line(&self, index: usize) -> Option<&'a str> {
         self.log_file.nth(index)
     }
 }

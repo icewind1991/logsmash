@@ -61,7 +61,7 @@ impl<'a> LogsState<'a> {
 #[derive(Clone)]
 pub struct LogState<'a> {
     pub trace_len: usize,
-    pub log: &'a LogLine,
+    pub log: &'a LogLine<'a>,
     pub full_line: FullLogLine,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
@@ -97,7 +97,7 @@ impl<'a> UiState<'a> {
         }
     }
 
-    pub fn process(self, event: UiEvent, app: &'a App) -> (bool, UiState) {
+    pub fn process(self, event: UiEvent, app: &'a App<'a>) -> (bool, UiState) {
         match (self, event) {
             (UiState::Quit, _) => (true, UiState::Quit),
             (_, UiEvent::Quit) => (true, UiState::Quit),

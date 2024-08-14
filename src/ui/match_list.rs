@@ -7,7 +7,7 @@ use ratatui::widgets::{Cell, Row};
 use std::fmt::Write;
 use std::iter::{empty, once};
 
-pub fn match_list(app: &App) -> ScrollbarTable {
+pub fn match_list<'a>(app: &'a App<'a>) -> ScrollbarTable<'a> {
     let header = [
         Text::from("Statement"),
         Text::from("File"),

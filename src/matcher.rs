@@ -57,7 +57,7 @@ impl Matcher {
         if let Some(exception) = &log.exception {
             for log_match in self.matches.iter() {
                 if log_match.line == exception.line
-                    && log_match.exception == Some(exception.exception.as_str())
+                    && log_match.exception == Some(exception.exception.as_ref())
                     && exception.file.ends_with(log_match.path)
                 {
                     return Some(MatchResult::Single(log_match.index));
@@ -68,7 +68,7 @@ impl Matcher {
         for log_match in self.matches.iter() {
             if log_match.has_meaningful_message
                 && log.level.matches(log_match.level)
-                && log_match.pattern.is_match(log.message.as_str())
+                && log_match.pattern.is_match(&log.message)
                 && log_match.pattern_length >= best_length
             {
                 if log_match.pattern_length > best_length {
@@ -147,7 +147,6 @@ impl MatchResult {
 fn test_matcher() {
     use crate::logline::Exception;
     use time::OffsetDateTime;
-    use tinystr::TinyAsciiStr;
 
     const STATEMENTS: &[LoggingStatement] = &[
         LoggingStatement {
@@ -195,8 +194,8 @@ fn test_matcher() {
     assert_eq!(
         Some(MatchResult::Single(0)),
         matcher.match_log(&LogLine {
-            version: TinyAsciiStr::from_str("29").unwrap(),
-            app: TinyAsciiStr::from_str("core").unwrap(),
+            version: "29",
+            app: "core",
             level: LogLevel::Error,
             message: "Not allowed to rename a shared album".into(),
             exception: None,
@@ -207,8 +206,8 @@ fn test_matcher() {
     assert_eq!(
         Some(MatchResult::List(vec![3, 4])),
         matcher.match_log(&LogLine {
-            version: TinyAsciiStr::from_str("29").unwrap(),
-            app: TinyAsciiStr::from_str("core").unwrap(),
+            version: "29",
+            app: "core",
             level: LogLevel::Error,
             message: "Not allowed to rename an album".into(),
             exception: None,
@@ -219,8 +218,8 @@ fn test_matcher() {
     assert_eq!(
         Some(MatchResult::Single(1)),
         matcher.match_log(&LogLine {
-            version: TinyAsciiStr::from_str("29").unwrap(),
-            app: TinyAsciiStr::from_str("core").unwrap(),
+            version: "29",
+            app: "core",
             level: LogLevel::Error,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
@@ -231,8 +230,8 @@ fn test_matcher() {
     assert_eq!(
         None,
         matcher.match_log(&LogLine {
-            version: TinyAsciiStr::from_str("29").unwrap(),
-            app: TinyAsciiStr::from_str("core").unwrap(),
+            version: "29",
+            app: "core",
             level: LogLevel::Info,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
@@ -244,8 +243,8 @@ fn test_matcher() {
         Some(MatchResult::Single(2)),
         matcher.match_log(
             &LogLine {
-                version: TinyAsciiStr::from_str("29").unwrap(),
-                app: TinyAsciiStr::from_str("core").unwrap(),
+                version: "29",
+                app: "core",
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: None,
@@ -258,8 +257,8 @@ fn test_matcher() {
         Some(MatchResult::Single(4)),
         matcher.match_log(
             &LogLine {
-                version: TinyAsciiStr::from_str("29").unwrap(),
-                app: TinyAsciiStr::from_str("core").unwrap(),
+                version: "29",
+                app: "core",
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: Some(Exception {

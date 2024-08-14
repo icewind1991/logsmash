@@ -143,7 +143,7 @@ fn main() -> MainResult {
         unmatched,
         all,
         error_count,
-        log_file,
+        log_file: &log_file,
     };
 
     if args.profile {

@@ -2,6 +2,7 @@ use ahash::AHasher;
 use logsmash_data::LogLevel;
 use serde::Deserialize;
 use serde_json::Value;
+use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use time::format_description::well_known::iso8601::{Config, EncodedConfig, TimePrecision};
@@ -16,14 +17,14 @@ pub const TIME_FORMAT: EncodedConfig = Config::DEFAULT
     .encode();
 
 #[derive(Deserialize)]
-pub struct LogLine {
+pub struct LogLine<'a> {
     #[serde(default)]
     pub index: usize,
-    pub version: TinyAsciiStr<16>,
+    pub version: &'a str,
     pub level: LogLevel,
-    pub message: String,
-    pub exception: Option<Exception>,
-    pub app: TinyAsciiStr<32>,
+    pub message: Cow<'a, str>,
+    pub exception: Option<Exception<'a>>,
+    pub app: &'a str,
     #[serde(with = "date")]
     pub time: OffsetDateTime,
 }
@@ -76,21 +77,10 @@ mod date {
                 return Ok(date);
             }
         }
-        return Err(D::Error::custom(format_args!(
+        Err(D::Error::custom(format_args!(
             "Failed to parse date: {}",
             str
-        )));
-    }
-}
-
-impl LogLine {
-    pub fn identity(&self) -> u64 {
-        let mut hasher = AHasher::default();
-        self.message.hash(&mut hasher);
-        self.level.hash(&mut hasher);
-        self.exception.hash(&mut hasher);
-        self.app.hash(&mut hasher);
-        hasher.finish()
+        )))
     }
 }
 
@@ -99,15 +89,24 @@ pub fn format_time(time: OffsetDateTime) -> String {
         .unwrap_or_else(|_| "Invalid time".into())
 }
 
-impl LogLine {
-    pub fn display(&self) -> String {
+impl<'a> LogLine<'a> {
+    pub fn identity(&self) -> u64 {
+        let mut hasher = AHasher::default();
+        self.message.hash(&mut hasher);
+        self.level.hash(&mut hasher);
+        self.exception.hash(&mut hasher);
+        self.app.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    pub fn display(&'a self) -> Cow<'a, str> {
         if let Some(exception) = self.exception.as_ref() {
-            format!(
+            Cow::Owned(format!(
                 "{}{}{}({}) - {} line {}",
                 if self.message.starts_with("Exception thrown:") {
                     ""
                 } else {
-                    self.message.as_str()
+                    &self.message
                 },
                 if self.message.starts_with("Exception thrown:") {
                     ""
@@ -118,23 +117,23 @@ impl LogLine {
                 exception.message,
                 exception.file,
                 exception.line
-            )
+            ))
         } else {
-            self.message.clone()
+            Cow::Borrowed(&self.message)
         }
     }
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-pub struct Exception {
-    pub message: String,
-    pub exception: String,
-    pub file: String,
+pub struct Exception<'a> {
+    pub message: Cow<'a, str>,
+    pub exception: Cow<'a, str>,
+    pub file: Cow<'a, str>,
     pub line: usize,
 }
 
-impl Hash for Exception {
+impl Hash for Exception<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.message.hash(state);
         self.exception.hash(state);
