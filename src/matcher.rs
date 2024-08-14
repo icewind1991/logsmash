@@ -1,16 +1,12 @@
-use crate::logline::LogLine;
+use crate::logline::{Exception, LogLine};
 use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
-use rayon::prelude::*;
-use regex::Regex;
 use std::hash::{Hash, Hasher};
 use std::iter::once;
 
 pub struct LogMatch {
     level: LogLevel,
-    pattern: Regex,
-    pattern_length: usize,
-    has_meaningful_message: bool,
+    pattern: Option<&'static str>,
     exception: Option<&'static str>,
     path: &'static str,
     line: usize,
@@ -21,16 +17,18 @@ impl LogMatch {
     pub fn new(index: usize, statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
-            pattern: Regex::new(statement.regex).expect("Invalid regex"),
-            pattern_length: statement.regex.len(),
-            has_meaningful_message: statement
-                .regex
-                .contains(|c: char| c.is_ascii_alphanumeric()),
+            pattern: statement
+                .has_meaningful_message()
+                .then_some(statement.pattern),
             exception: statement.exception,
             path: statement.path,
             line: statement.line,
             index,
         }
+    }
+
+    pub fn pattern_len(&self) -> usize {
+        self.pattern.map(|pat| pat.len()).unwrap_or_default()
     }
 }
 
@@ -40,12 +38,12 @@ pub struct Matcher {
 
 impl Matcher {
     pub fn new(statements: &StatementList) -> Matcher {
-        let matches: Vec<_> = statements
+        let mut matches: Vec<_> = statements
             .iter()
             .enumerate()
-            .par_bridge()
             .map(|(index, statement)| LogMatch::new(index, statement))
             .collect();
+        matches.sort_by(|a, b| a.pattern_len().cmp(&b.pattern_len()).reverse());
 
         Matcher { matches }
     }
@@ -55,34 +53,32 @@ impl Matcher {
         let mut best_length = 0;
 
         if let Some(exception) = &log.exception {
-            for log_match in self.matches.iter() {
-                if log_match.line == exception.line
-                    && log_match.exception == Some(exception.exception.as_ref())
-                    && exception.file.ends_with(log_match.path)
-                {
-                    return Some(MatchResult::Single(log_match.index));
-                }
+            if let Some(index) = self.match_exception(exception) {
+                return Some(MatchResult::Single(index));
             }
         }
 
         for log_match in self.matches.iter() {
-            if log_match.has_meaningful_message
-                && log.level.matches(log_match.level)
-                && log_match.pattern.is_match(&log.message)
-                && log_match.pattern_length >= best_length
-            {
-                if log_match.pattern_length > best_length {
-                    best_match = None;
-                    best_length = log_match.pattern_length;
-                }
-                best_match = Some(match best_match {
-                    Some(MatchResult::Single(res)) => MatchResult::List(vec![res, log_match.index]),
-                    Some(MatchResult::List(mut list)) => {
-                        list.push(log_match.index);
-                        MatchResult::List(list)
+            if log_match.pattern_len() < best_length {
+                break;
+            }
+
+            if let Some(source_pattern) = log_match.pattern {
+                if log.level.matches(log_match.level) {
+                    if match_single(source_pattern, log.message.as_ref()) {
+                        best_length = log_match.pattern_len();
+                        best_match = Some(match best_match {
+                            Some(MatchResult::Single(res)) => {
+                                MatchResult::List(vec![res, log_match.index])
+                            }
+                            Some(MatchResult::List(mut list)) => {
+                                list.push(log_match.index);
+                                MatchResult::List(list)
+                            }
+                            None => MatchResult::Single(log_match.index),
+                        });
                     }
-                    None => MatchResult::Single(log_match.index),
-                });
+                }
             }
         }
 
@@ -90,6 +86,28 @@ impl Matcher {
 
         best_match
     }
+
+    fn match_exception(&self, exception: &Exception) -> Option<usize> {
+        for log_match in self.matches.iter() {
+            if log_match.line == exception.line
+                && log_match.exception == Some(exception.exception.as_ref())
+                && exception.file.ends_with(log_match.path)
+            {
+                return Some(log_match.index);
+            }
+        }
+        None
+    }
+}
+
+pub fn match_single(pattern: &str, text: &str) -> bool {
+    let mut state = SingleMatchState::new(pattern);
+    for byte in text.as_bytes() {
+        if !state.process_byte(*byte) {
+            return false;
+        }
+    }
+    state.is_done()
 }
 
 #[derive(Debug, Clone, Eq)]
@@ -143,6 +161,38 @@ impl MatchResult {
     }
 }
 
+#[derive(Default, Copy, Clone)]
+pub struct SingleMatchState<'a> {
+    remaining_pattern: &'a [u8],
+}
+
+impl<'a> SingleMatchState<'a> {
+    pub fn new(pattern: &'a str) -> Self {
+        SingleMatchState {
+            remaining_pattern: pattern.as_bytes(),
+        }
+    }
+
+    pub fn process_byte(&mut self, byte: u8) -> bool {
+        match (self.remaining_pattern.get(0), self.remaining_pattern.get(1)) {
+            (Some(0), Some(p)) if *p == byte => {
+                self.remaining_pattern = &self.remaining_pattern[2..];
+                true
+            }
+            (Some(0), _) => true,
+            (Some(p), _) if *p == byte => {
+                self.remaining_pattern = &self.remaining_pattern[1..];
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn is_done(&self) -> bool {
+        matches!(self.remaining_pattern, [] | [0])
+    }
+}
+
 #[test]
 fn test_matcher() {
     use crate::logline::Exception;
@@ -154,7 +204,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "foo",
             placeholders: &[],
-            regex: "^Not allowed to rename a shared album$",
+            pattern: "Not allowed to rename a shared album",
             exception: None,
         },
         LoggingStatement {
@@ -162,7 +212,7 @@ fn test_matcher() {
             level: LogLevel::Error,
             path: "bar",
             placeholders: &[],
-            regex: "^You are not allowed to edit link shares that you don't own$",
+            pattern: "You are not allowed to edit link shares that you don't own",
             exception: None,
         },
         LoggingStatement {
@@ -170,7 +220,7 @@ fn test_matcher() {
             level: LogLevel::Error,
             path: "asd",
             placeholders: &["$mimeType"],
-            regex: r#"^Unsupported query value for mimetype: (.*), only values in the format "mime/type" or "mime/%" are supported$"#,
+            pattern: "Unsupported query value for mimetype: \0, only values in the format \"mime/type\" or \"mime/%\" are supported",
             exception: None,
         },
         LoggingStatement {
@@ -178,7 +228,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "short",
             placeholders: &["$path"],
-            regex: "^Not allowed to rename (.*)$",
+            pattern: "Not allowed to rename \0",
             exception: None,
         },
         LoggingStatement {
@@ -186,7 +236,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "short",
             placeholders: &["$path"],
-            regex: "^Not allowed to rename (.*)$",
+            pattern: "Not allowed to rename \0",
             exception: Some("Bar\\FooException"),
         },
     ];

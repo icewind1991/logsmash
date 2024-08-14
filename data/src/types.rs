@@ -4,14 +4,10 @@ use std::fmt::{Display, Formatter};
 #[derive(Debug, Default, PartialEq, Clone, Copy, Deserialize, Hash)]
 #[serde(from = "i64")]
 pub enum LogLevel {
-    Debug,
-    Info,
-    Notice,
-    Warn,
-    Error,
-    Alert,
-    Critical,
-    Emergency,
+    Debug = 0,
+    Info = 1,
+    Warn = 2,
+    Error = 3,
     Exception,
     #[default]
     Unknown,
@@ -31,11 +27,6 @@ impl From<i64> for LogLevel {
 
 impl LogLevel {
     pub fn matches(&self, matcher_level: LogLevel) -> bool {
-        let matcher_level = match matcher_level {
-            LogLevel::Notice => LogLevel::Info,
-            LogLevel::Alert | LogLevel::Critical | LogLevel::Emergency => LogLevel::Error,
-            _ => matcher_level,
-        };
         matcher_level == *self || matcher_level == LogLevel::Exception || *self == LogLevel::Unknown
     }
 
@@ -43,12 +34,8 @@ impl LogLevel {
         match self {
             LogLevel::Debug => "debug",
             LogLevel::Info => "info",
-            LogLevel::Notice => "notice",
             LogLevel::Warn => "warn",
             LogLevel::Error => "error",
-            LogLevel::Alert => "alert",
-            LogLevel::Critical => "critical",
-            LogLevel::Emergency => "emergency",
             LogLevel::Exception => "exception",
             LogLevel::Unknown => "log",
         }
@@ -62,7 +49,7 @@ pub struct LoggingStatement {
     pub line: usize,
     pub placeholders: &'static [&'static str],
     pub exception: Option<&'static str>,
-    pub regex: &'static str,
+    pub pattern: &'static str,
 }
 
 impl LoggingStatement {
@@ -74,7 +61,7 @@ impl LoggingStatement {
             line: self.line,
             placeholders: self.placeholders,
             exception: self.exception,
-            regex: self.regex,
+            pattern: self.pattern,
         }
     }
 
@@ -82,6 +69,14 @@ impl LoggingStatement {
         LoggingMessage {
             message: self.clone(),
         }
+    }
+
+    pub fn pattern_len(&self) -> usize {
+        self.pattern.len()
+    }
+
+    pub fn has_meaningful_message(&self) -> bool {
+        self.pattern.contains(|c: char| c.is_ascii_alphanumeric())
     }
 }
 
@@ -93,7 +88,7 @@ pub struct LoggingStatementWithPathPrefix {
     pub line: usize,
     pub placeholders: &'static [&'static str],
     pub exception: Option<&'static str>,
-    pub regex: &'static str,
+    pub pattern: &'static str,
 }
 
 impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
@@ -104,7 +99,7 @@ impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
             line: value.line,
             placeholders: value.placeholders,
             exception: value.exception,
-            regex: value.regex,
+            pattern: value.pattern,
         }
     }
 }
@@ -175,12 +170,11 @@ struct LoggingMessage {
 
 impl Display for LoggingMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if self.message.regex.is_empty() {
+        if self.message.pattern.is_empty() {
             return Ok(());
         }
         let mut placeholder_index = 0;
-        let regex = &self.message.regex[1..self.message.regex.len() - 1];
-        for part in regex.split("(.*)") {
+        for part in self.message.pattern.split('\0') {
             write!(f, "{part}")?;
             if let Some(placeholder) = self.message.placeholders.get(placeholder_index) {
                 write!(f, "{placeholder}")?;
