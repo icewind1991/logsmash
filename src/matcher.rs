@@ -64,20 +64,20 @@ impl Matcher {
             }
 
             if let Some(source_pattern) = log_match.pattern {
-                if log.level.matches(log_match.level) {
-                    if match_single(source_pattern, log.message.as_ref()) {
-                        best_length = log_match.pattern_len();
-                        best_match = Some(match best_match {
-                            Some(MatchResult::Single(res)) => {
-                                MatchResult::List(vec![res, log_match.index])
-                            }
-                            Some(MatchResult::List(mut list)) => {
-                                list.push(log_match.index);
-                                MatchResult::List(list)
-                            }
-                            None => MatchResult::Single(log_match.index),
-                        });
-                    }
+                if log.level.matches(log_match.level)
+                    && match_single(source_pattern, log.message.as_ref())
+                {
+                    best_length = log_match.pattern_len();
+                    best_match = Some(match best_match {
+                        Some(MatchResult::Single(res)) => {
+                            MatchResult::List(vec![res, log_match.index])
+                        }
+                        Some(MatchResult::List(mut list)) => {
+                            list.push(log_match.index);
+                            MatchResult::List(list)
+                        }
+                        None => MatchResult::Single(log_match.index),
+                    });
                 }
             }
         }
@@ -199,7 +199,7 @@ impl<'a> SingleMatchState<'a> {
 
     pub fn process_byte(&mut self, byte: u8) -> bool {
         let pattern = self.remaining_pattern();
-        match (pattern.get(0), pattern.get(1)) {
+        match (pattern.first(), pattern.get(1)) {
             (Some(0), Some(p)) if *p == byte => {
                 self.offset += 2;
                 true
