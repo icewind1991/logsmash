@@ -163,33 +163,64 @@ impl MatchResult {
 
 #[derive(Default, Copy, Clone)]
 pub struct SingleMatchState<'a> {
-    remaining_pattern: &'a [u8],
+    pattern: &'a [u8],
+    offset: usize,
 }
 
 impl<'a> SingleMatchState<'a> {
     pub fn new(pattern: &'a str) -> Self {
         SingleMatchState {
-            remaining_pattern: pattern.as_bytes(),
+            pattern: pattern.as_bytes(),
+            offset: 0,
+        }
+    }
+
+    fn remaining_pattern(&self) -> &'a [u8] {
+        &self.pattern[self.offset..]
+    }
+
+    /// Backtrack to the latest wildcard
+    fn backtrack(&mut self) -> bool {
+        if self.offset == 0 {
+            return false;
+        }
+
+        if let Some(new_offset) = self.pattern[0..self.offset]
+            .iter()
+            .copied()
+            .rposition(|c| c == 0)
+        {
+            self.offset = new_offset;
+            true
+        } else {
+            false
         }
     }
 
     pub fn process_byte(&mut self, byte: u8) -> bool {
-        match (self.remaining_pattern.get(0), self.remaining_pattern.get(1)) {
+        let pattern = self.remaining_pattern();
+        match (pattern.get(0), pattern.get(1)) {
             (Some(0), Some(p)) if *p == byte => {
-                self.remaining_pattern = &self.remaining_pattern[2..];
+                self.offset += 2;
                 true
             }
             (Some(0), _) => true,
             (Some(p), _) if *p == byte => {
-                self.remaining_pattern = &self.remaining_pattern[1..];
+                self.offset += 1;
                 true
             }
-            _ => false,
+            _ => {
+                if self.backtrack() {
+                    self.process_byte(byte)
+                } else {
+                    false
+                }
+            }
         }
     }
 
     pub fn is_done(&self) -> bool {
-        matches!(self.remaining_pattern, [] | [0])
+        matches!(self.remaining_pattern(), [] | [0])
     }
 }
 
@@ -238,6 +269,14 @@ fn test_matcher() {
             placeholders: &["$path"],
             pattern: "Not allowed to rename \0",
             exception: Some("Bar\\FooException"),
+        },
+        LoggingStatement {
+            line: 68,
+            level: LogLevel::Error,
+            path: "short",
+            placeholders: &["$path"],
+            pattern: "Not allowed to rename \0 to \0",
+            exception: None,
         },
     ];
     let matcher = Matcher::new(&StatementList::new(vec![("", STATEMENTS)]));
@@ -321,5 +360,17 @@ fn test_matcher() {
                 index: 0,
             }
         )
+    );
+    assert_eq!(
+        Some(MatchResult::Single(5)),
+        matcher.match_log(&LogLine {
+            version: "29",
+            app: "core",
+            level: LogLevel::Error,
+            message: "Not allowed to rename 'foo to' to to2".into(),
+            exception: None,
+            time: OffsetDateTime::now_utc(),
+            index: 0,
+        })
     );
 }
