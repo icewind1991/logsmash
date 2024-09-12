@@ -3,10 +3,12 @@ use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use std::hash::{Hash, Hasher};
 use std::iter::once;
+use std::ops::Range;
 
+#[derive(Debug)]
 pub struct LogMatch {
     level: LogLevel,
-    pattern: Option<&'static str>,
+    pattern: &'static str,
     exception: Option<&'static str>,
     path: &'static str,
     line: usize,
@@ -17,9 +19,11 @@ impl LogMatch {
     pub fn new(index: usize, statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
-            pattern: statement
-                .has_meaningful_message()
-                .then_some(statement.pattern),
+            pattern: if statement.has_meaningful_message() {
+                statement.pattern
+            } else {
+                ""
+            },
             exception: statement.exception,
             path: statement.path,
             line: statement.line,
@@ -28,12 +32,13 @@ impl LogMatch {
     }
 
     pub fn pattern_len(&self) -> usize {
-        self.pattern.map(|pat| pat.len()).unwrap_or_default()
+        self.pattern.len()
     }
 }
 
 pub struct Matcher {
     matches: Vec<LogMatch>,
+    level_ranges: Vec<Range<usize>>,
 }
 
 impl Matcher {
@@ -43,9 +48,37 @@ impl Matcher {
             .enumerate()
             .map(|(index, statement)| LogMatch::new(index, statement))
             .collect();
-        matches.sort_by(|a, b| a.pattern_len().cmp(&b.pattern_len()).reverse());
+        matches.sort_by(|a, b| {
+            // sort first by level, then by longest pattern
+            a.level
+                .cmp(&b.level)
+                .then(a.pattern_len().cmp(&b.pattern_len()).reverse())
+        });
+        let level_starts =
+            LogLevel::iter().map(|level| matches.iter().position(|m| m.level == level));
+        let level_ends =
+            LogLevel::iter().map(|level| matches.iter().rposition(|m| m.level == level));
+        let level_ranges = level_starts
+            .zip(level_ends)
+            .map(|(start, end)| match (start, end) {
+                (Some(start), Some(end)) => start..end + 1,
+                _ => 0..0,
+            })
+            .collect();
 
-        Matcher { matches }
+        Matcher {
+            matches,
+            level_ranges,
+        }
+    }
+
+    fn matches_for_level(&self, level: LogLevel) -> impl Iterator<Item = &[LogMatch]> {
+        LogLevel::iter()
+            .zip(self.level_ranges.iter())
+            .filter_map(move |(match_level, range)| {
+                level.matches(match_level).then_some(range.clone())
+            })
+            .map(|range| &self.matches[range])
     }
 
     pub fn match_log(&self, log: &LogLine) -> Option<MatchResult> {
@@ -58,26 +91,26 @@ impl Matcher {
             }
         }
 
-        for log_match in self.matches.iter() {
-            if log_match.pattern_len() < best_length {
-                break;
-            }
+        for matches_for_level in self.matches_for_level(log.level) {
+            for log_match in matches_for_level {
+                if log_match.pattern_len() < best_length {
+                    break;
+                }
 
-            if let Some(source_pattern) = log_match.pattern {
-                if log.level.matches(log_match.level)
-                    && match_single(source_pattern, log.message.as_ref())
-                {
-                    best_length = log_match.pattern_len();
-                    best_match = Some(match best_match {
-                        Some(MatchResult::Single(res)) => {
-                            MatchResult::List(vec![res, log_match.index])
-                        }
-                        Some(MatchResult::List(mut list)) => {
-                            list.push(log_match.index);
-                            MatchResult::List(list)
-                        }
-                        None => MatchResult::Single(log_match.index),
-                    });
+                if !log_match.pattern.is_empty() {
+                    if match_single(log_match.pattern, log.message.as_ref()) {
+                        best_length = log_match.pattern_len();
+                        best_match = Some(match best_match {
+                            Some(MatchResult::Single(res)) => {
+                                MatchResult::List(vec![res, log_match.index])
+                            }
+                            Some(MatchResult::List(mut list)) => {
+                                list.push(log_match.index);
+                                MatchResult::List(list)
+                            }
+                            None => MatchResult::Single(log_match.index),
+                        });
+                    }
                 }
             }
         }

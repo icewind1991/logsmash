@@ -3,3 +3,4 @@ target
 .env
 result
 *.log
+profile.json
