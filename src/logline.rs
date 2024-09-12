@@ -124,22 +124,13 @@ impl<'a> LogLine<'a> {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Hash)]
 #[serde(rename_all = "PascalCase")]
 pub struct Exception<'a> {
     pub message: Cow<'a, str>,
     pub exception: Cow<'a, str>,
     pub file: Cow<'a, str>,
     pub line: usize,
-}
-
-impl Hash for Exception<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.message.hash(state);
-        self.exception.hash(state);
-        self.file.hash(state);
-        self.line.hash(state);
-    }
 }
 
 #[derive(Deserialize, Clone)]

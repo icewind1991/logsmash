@@ -97,20 +97,20 @@ impl Matcher {
                     break;
                 }
 
-                if !log_match.pattern.is_empty() {
-                    if match_single(log_match.pattern, log.message.as_ref()) {
-                        best_length = log_match.pattern_len();
-                        best_match = Some(match best_match {
-                            Some(MatchResult::Single(res)) => {
-                                MatchResult::List(vec![res, log_match.index])
-                            }
-                            Some(MatchResult::List(mut list)) => {
-                                list.push(log_match.index);
-                                MatchResult::List(list)
-                            }
-                            None => MatchResult::Single(log_match.index),
-                        });
-                    }
+                if !log_match.pattern.is_empty()
+                    && match_single(log_match.pattern, log.message.as_ref())
+                {
+                    best_length = log_match.pattern_len();
+                    best_match = Some(match best_match {
+                        Some(MatchResult::Single(res)) => {
+                            MatchResult::List(vec![res, log_match.index])
+                        }
+                        Some(MatchResult::List(mut list)) => {
+                            list.push(log_match.index);
+                            MatchResult::List(list)
+                        }
+                        None => MatchResult::Single(log_match.index),
+                    });
                 }
             }
         }
