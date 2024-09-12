@@ -8,7 +8,6 @@ use base64::prelude::*;
 use clap::Parser;
 use logsmash_data::{default_apps, get_statements, SourceDefinition};
 use main_error::MainResult;
-use rayon::prelude::ParallelBridge;
 use rayon::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -44,10 +43,10 @@ fn main() -> MainResult {
         err,
         path: args.file,
     })?;
-    let mut lines = log_file.iter();
+    let lines: Vec<_> = log_file.iter().enumerate().collect();
 
     let mut counts: HashMap<MatchResult, Vec<usize>> = HashMap::new();
-    let first = lines.next().unwrap_or_default();
+    let (_, first) = lines.first().copied().unwrap_or_default();
     let first_parsed = match parse_line(first) {
         Ok(first_parsed) => first_parsed,
         Err(e) => {
@@ -67,11 +66,8 @@ fn main() -> MainResult {
     );
     let matcher = Matcher::new(&statements);
 
-    let lines = once(first).chain(lines);
-
     let mut results: Vec<_> = lines
-        .enumerate()
-        .par_bridge()
+        .into_par_iter()
         .map(|(index, line)| {
             let mut parsed = parse_line(line);
             if let Ok(parsed) = parsed.as_mut() {
