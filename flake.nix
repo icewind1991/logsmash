@@ -103,7 +103,7 @@
         releaseMatrix = buildMatrix releaseTargets;
 
         devShells.default = mkShell {
-          nativeBuildInputs = with pkgs; [msrvToolchain rustc bacon cargo-msrv cargo-insta samply hyperfine];
+          nativeBuildInputs = with pkgs; [msrvToolchain rustc bacon cargo-msrv cargo-insta hyperfine];
         };
       }
     )

@@ -198,14 +198,15 @@ impl<'a> SingleMatchState<'a> {
     }
 
     pub fn process_byte(&mut self, byte: u8) -> bool {
+        // note that the pattern is padded with 2 \x01 bytes so we should never reach the end
         let pattern = self.remaining_pattern();
-        match (pattern.first(), pattern.get(1)) {
-            (Some(0), Some(p)) if *p == byte => {
+        match pattern.get(0..2) {
+            Some(&[0, p]) if p == byte => {
                 self.offset += 2;
                 true
             }
-            (Some(0), _) => true,
-            (Some(p), _) if *p == byte => {
+            Some(&[0, _]) => true,
+            Some(&[p, _]) if p == byte => {
                 self.offset += 1;
                 true
             }
@@ -220,7 +221,7 @@ impl<'a> SingleMatchState<'a> {
     }
 
     pub fn is_done(&self) -> bool {
-        matches!(self.remaining_pattern(), [] | [0])
+        matches!(self.remaining_pattern(), [1, 1] | [0, 1, 1])
     }
 }
 
@@ -235,7 +236,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "foo",
             placeholders: &[],
-            pattern: "Not allowed to rename a shared album",
+            pattern: "Not allowed to rename a shared album\x01\x01",
             exception: None,
         },
         LoggingStatement {
@@ -243,7 +244,7 @@ fn test_matcher() {
             level: LogLevel::Error,
             path: "bar",
             placeholders: &[],
-            pattern: "You are not allowed to edit link shares that you don't own",
+            pattern: "You are not allowed to edit link shares that you don't own\x01\x01",
             exception: None,
         },
         LoggingStatement {
@@ -251,7 +252,7 @@ fn test_matcher() {
             level: LogLevel::Error,
             path: "asd",
             placeholders: &["$mimeType"],
-            pattern: "Unsupported query value for mimetype: \0, only values in the format \"mime/type\" or \"mime/%\" are supported",
+            pattern: "Unsupported query value for mimetype: \0, only values in the format \"mime/type\" or \"mime/%\" are supported\x01\x01",
             exception: None,
         },
         LoggingStatement {
@@ -259,7 +260,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "short",
             placeholders: &["$path"],
-            pattern: "Not allowed to rename \0",
+            pattern: "Not allowed to rename \0\x01\x01",
             exception: None,
         },
         LoggingStatement {
@@ -267,7 +268,7 @@ fn test_matcher() {
             level: LogLevel::Exception,
             path: "short",
             placeholders: &["$path"],
-            pattern: "Not allowed to rename \0",
+            pattern: "Not allowed to rename \0\x01\x01",
             exception: Some("Bar\\FooException"),
         },
         LoggingStatement {
@@ -275,7 +276,7 @@ fn test_matcher() {
             level: LogLevel::Error,
             path: "short",
             placeholders: &["$path"],
-            pattern: "Not allowed to rename \0 to \0",
+            pattern: "Not allowed to rename \0 to \0\x01\x01",
             exception: None,
         },
     ];

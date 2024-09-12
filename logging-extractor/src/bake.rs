@@ -50,6 +50,7 @@ fn build_pattern(parts: &[crate::MessagePart]) -> String {
             }
         }
     }
+    pattern.push_str("\x01\x01");
     pattern
 }
 

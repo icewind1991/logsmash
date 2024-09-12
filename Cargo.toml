@@ -30,3 +30,7 @@ tikv-jemallocator = "0.6.0"
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.profiling]
+inherits = "release"
+debug = true
