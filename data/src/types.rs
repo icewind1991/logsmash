@@ -157,9 +157,9 @@ struct LoggingStatementMessage {
 impl Display for LoggingStatementMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(exception) = self.exception {
-            write!(f, "«{}({})»", exception, self.message)
+            write!(f, "{}({})", exception, self.message)
         } else {
-            write!(f, "«{}»", self.message)
+            write!(f, "{}", self.message)
         }
     }
 }
@@ -186,7 +186,7 @@ impl Display for LoggingMessage {
             return Ok(());
         }
         let mut placeholder_index = 0;
-        for part in self.message.pattern.split('\0') {
+        for part in self.message.pattern.trim_end_matches('\x01').split('\0') {
             write!(f, "{part}")?;
             if let Some(placeholder) = self.message.placeholders.get(placeholder_index) {
                 write!(f, "{placeholder}")?;
