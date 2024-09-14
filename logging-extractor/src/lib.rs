@@ -53,7 +53,7 @@ pub fn extract_dir<W: Write>(root: &str, mut output: W, bake: bool) -> Result<()
 
     let extractor = LogExtractor::new();
 
-    for file in WalkDir::new(root).into_iter().flatten() {
+    for file in WalkDir::new(root).sort_by_file_name().into_iter().flatten() {
         let path = file.path();
         if let Some(path) = path.to_str() {
             if file.file_type().is_file() && path.ends_with(".php") {
