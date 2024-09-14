@@ -22,8 +22,7 @@ impl MessageBuilder {
             for placeholder in self.placeholder_regex.find_iter(content) {
                 if placeholder.start() > start {
                     Self::push_literal_inner(&mut self.parts, &content[start..placeholder.start()]);
-                    self.parts
-                        .push(MessagePart::PlaceHolder(placeholder.as_str().into()));
+                    Self::push_placeholder_inner(&mut self.parts, placeholder.as_str());
                 }
                 start = placeholder.end();
             }
@@ -44,8 +43,13 @@ impl MessageBuilder {
     }
 
     pub fn push_placeholder(&mut self, placeholder: &str) {
-        self.parts
-            .push(MessagePart::PlaceHolder(placeholder.into()));
+        Self::push_placeholder_inner(&mut self.parts, placeholder);
+    }
+
+    fn push_placeholder_inner(parts: &mut Vec<MessagePart>, placeholder: &str) {
+        let placeholder = placeholder.replace(['\n', '\r', '\t'], "");
+        parts
+            .push(MessagePart::PlaceHolder(placeholder));
     }
 
     pub fn push_node(&mut self, node: Node, code: &str) {
