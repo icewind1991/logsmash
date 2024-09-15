@@ -41,11 +41,12 @@ impl StatefulWidget for SingleLog {
     {
         if let Some(line) = self.line {
             let par = Paragraph::new(format!(
-                "{}\n\n  {} {}\n  {}\n\n  from {} by {} at {}",
+                "{}\n\n  {} {}\n  {}\n\n  {} from {} by {} at {}",
                 line.message,
                 line.method,
                 line.url,
                 line.user_agent,
+                line.request_id,
                 line.remote_address,
                 line.user,
                 format_time(line.time),
