@@ -245,6 +245,7 @@ fn test_extract_logging() {
         throw new SomeException();
         throw new \SomeException();
         $this->logger->error("foo {bar} {asd}");
+        $this->logger->error($this->l10n->t("translated %s", $foo));
       }
     ?>
     "#;
@@ -364,6 +365,20 @@ fn test_extract_logging() {
                 MessagePart::PlaceHolder("{bar}".into()),
                 MessagePart::Literal(" ".into()),
                 MessagePart::PlaceHolder("{asd}".into()),
+            ]
+        }
+    );
+    assert_eq!(
+        logs[9],
+        LoggingStatement {
+            path: "foo.php",
+            line: 16,
+            level: LogLevel::Error,
+            has_meaningful_message: true,
+            exception: None,
+            message_parts: vec![
+                MessagePart::Literal("translated ".into()),
+                MessagePart::PlaceHolder("$foo".into()),
             ]
         }
     );

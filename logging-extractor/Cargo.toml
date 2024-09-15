@@ -22,6 +22,7 @@ memchr = "2.7.4"
 databake = { version = "0.1.8", features = ["derive"] }
 regex-syntax = "0.8.4"
 regex = "1.10.5"
+sprintf = "0.3.1"
 
 [build-dependencies]
 cc = "1.1.6"
