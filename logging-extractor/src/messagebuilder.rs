@@ -97,12 +97,13 @@ impl MessageBuilder {
                     }
                 }
             }
-            "member_call_expression" => {
+            "member_call_expression" | "function_call_expression" => {
                 match node
                     .child_by_field_name("name")
+                    .or_else(|| node.child_by_field_name("function"))
                     .and_then(|name| name.utf8_text(code.as_bytes()).ok())
                 {
-                    Some("t") => {
+                    Some("t") | Some("sprintf") => {
                         let arguments =
                             node.child_by_field_name("arguments").expect("no arguments");
                         let mut arguments = arguments.children(&mut cursor).skip(1); // opening bracket

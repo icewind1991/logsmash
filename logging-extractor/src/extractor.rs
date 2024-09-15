@@ -246,6 +246,7 @@ fn test_extract_logging() {
         throw new \SomeException();
         $this->logger->error("foo {bar} {asd}");
         $this->logger->error($this->l10n->t("translated %s", $foo));
+        throw new InvalidArgumentException(sprintf('Argument "%s" not found.', $key));
       }
     ?>
     "#;
@@ -379,6 +380,21 @@ fn test_extract_logging() {
             message_parts: vec![
                 MessagePart::Literal("translated ".into()),
                 MessagePart::PlaceHolder("$foo".into()),
+            ]
+        }
+    );
+    assert_eq!(
+        logs[10],
+        LoggingStatement {
+            path: "foo.php",
+            line: 17,
+            level: LogLevel::Exception,
+            has_meaningful_message: true,
+            exception: Some("Test\\InvalidArgumentException".into()),
+            message_parts: vec![
+                MessagePart::Literal(r#"Argument ""#.into()),
+                MessagePart::PlaceHolder("$key".into()),
+                MessagePart::Literal(r#"" not found."#.into()),
             ]
         }
     );
