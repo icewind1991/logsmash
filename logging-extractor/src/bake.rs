@@ -38,6 +38,7 @@ pub struct LoggingStatement<'a> {
     pub placeholders: &'a [&'a str],
     pub exception: Option<&'a str>,
     pub pattern: &'a str,
+    pub has_meaningful_message: bool,
 }
 
 fn build_pattern(parts: &[crate::MessagePart]) -> String {
@@ -71,6 +72,11 @@ pub fn bake_statement(output: &mut String, statement: &crate::LoggingStatement) 
         exception: statement.exception.as_deref(),
         placeholders: &placeholders,
         pattern: &pattern,
+        has_meaningful_message: message_is_meaningful(&pattern),
     };
     output.push_str(&statement.bake(&Default::default()).to_string());
+}
+
+fn message_is_meaningful(msg: &str) -> bool {
+    msg.chars().filter(|c| c.is_alphanumeric()).count() > 3
 }

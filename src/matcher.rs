@@ -19,7 +19,7 @@ impl LogMatch {
     pub fn new(index: usize, statement: &LoggingStatement) -> LogMatch {
         LogMatch {
             level: statement.level,
-            pattern: if statement.has_meaningful_message() {
+            pattern: if statement.has_meaningful_message {
                 statement.pattern
             } else {
                 ""
@@ -271,6 +271,7 @@ fn test_matcher() {
             placeholders: &[],
             pattern: "Not allowed to rename a shared album\x01\x01",
             exception: None,
+            has_meaningful_message: true,
         },
         LoggingStatement {
             line: 69,
@@ -279,6 +280,7 @@ fn test_matcher() {
             placeholders: &[],
             pattern: "You are not allowed to edit link shares that you don't own\x01\x01",
             exception: None,
+            has_meaningful_message: true,
         },
         LoggingStatement {
             line: 69,
@@ -287,6 +289,7 @@ fn test_matcher() {
             placeholders: &["$mimeType"],
             pattern: "Unsupported query value for mimetype: \0, only values in the format \"mime/type\" or \"mime/%\" are supported\x01\x01",
             exception: None,
+            has_meaningful_message: true,
         },
         LoggingStatement {
             line: 68,
@@ -295,6 +298,7 @@ fn test_matcher() {
             placeholders: &["$path"],
             pattern: "Not allowed to rename \0\x01\x01",
             exception: None,
+            has_meaningful_message: true,
         },
         LoggingStatement {
             line: 68,
@@ -303,6 +307,7 @@ fn test_matcher() {
             placeholders: &["$path"],
             pattern: "Not allowed to rename \0\x01\x01",
             exception: Some("Bar\\FooException"),
+            has_meaningful_message: true,
         },
         LoggingStatement {
             line: 68,
@@ -311,6 +316,7 @@ fn test_matcher() {
             placeholders: &["$path"],
             pattern: "Not allowed to rename \0 to \0\x01\x01",
             exception: None,
+            has_meaningful_message: true,
         },
     ];
     let matcher = Matcher::new(&StatementList::new(vec![("", STATEMENTS)]));

@@ -62,6 +62,7 @@ pub struct LoggingStatement {
     pub placeholders: &'static [&'static str],
     pub exception: Option<&'static str>,
     pub pattern: &'static str,
+    pub has_meaningful_message: bool,
 }
 
 impl LoggingStatement {
@@ -74,6 +75,7 @@ impl LoggingStatement {
             placeholders: self.placeholders,
             exception: self.exception,
             pattern: self.pattern,
+            has_meaningful_message: self.has_meaningful_message,
         }
     }
 
@@ -86,10 +88,6 @@ impl LoggingStatement {
     pub fn pattern_len(&self) -> usize {
         self.pattern.len()
     }
-
-    pub fn has_meaningful_message(&self) -> bool {
-        self.pattern.contains(|c: char| c.is_ascii_alphanumeric())
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -101,6 +99,7 @@ pub struct LoggingStatementWithPathPrefix {
     pub placeholders: &'static [&'static str],
     pub exception: Option<&'static str>,
     pub pattern: &'static str,
+    pub has_meaningful_message: bool,
 }
 
 impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
@@ -112,6 +111,7 @@ impl From<&LoggingStatementWithPathPrefix> for LoggingStatement {
             placeholders: value.placeholders,
             exception: value.exception,
             pattern: value.pattern,
+            has_meaningful_message: value.has_meaningful_message,
         }
     }
 }
