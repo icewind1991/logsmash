@@ -100,6 +100,9 @@ impl Matcher {
                 if !log_match.pattern.is_empty()
                     && match_single(log_match.pattern, log.message.as_ref())
                 {
+                    if log_match.pattern_len() > best_length {
+                        best_match = None;
+                    }
                     best_length = log_match.pattern_len();
                     best_match = Some(match best_match {
                         Some(MatchResult::Single(res)) => {
