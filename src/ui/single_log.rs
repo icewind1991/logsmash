@@ -10,11 +10,26 @@ use std::iter::once;
 pub fn single_log(app: &App, line: &LogLine) -> SingleLog {
     let raw_line = app.get_line(line.index);
     let line = raw_line.and_then(|raw_line| parse_line_full(raw_line).ok());
-    SingleLog { line }
+    SingleLog::new(line)
 }
 
 pub struct SingleLog {
     line: Option<FullLogLine>,
+    path_prefix_length: usize,
+}
+
+impl SingleLog {
+    pub fn new(line: Option<FullLogLine>) -> Self {
+        let path_prefix_length = line
+            .as_ref()
+            .and_then(|line| line.exception.as_ref())
+            .map(|ex| find_path_prefix_length(ex.trace.iter().map(|t| t.file.as_str())))
+            .unwrap_or_default();
+        SingleLog {
+            line,
+            path_prefix_length,
+        }
+    }
 }
 
 impl StatefulWidget for SingleLog {
@@ -51,7 +66,7 @@ impl StatefulWidget for SingleLog {
             if let Some(exception) = &line.exception {
                 if line.message.contains(&exception.message) {
                     StatefulWidget::render(
-                        render_exception(exception),
+                        render_exception(exception, self.path_prefix_length),
                         layout[1].union(layout[2]),
                         buf,
                         state,
@@ -63,7 +78,12 @@ impl StatefulWidget for SingleLog {
                     ))
                     .wrap(Wrap::default());
                     ex_par.render(layout[1], buf);
-                    StatefulWidget::render(render_exception(exception), layout[2], buf, state);
+                    StatefulWidget::render(
+                        render_exception(exception, self.path_prefix_length),
+                        layout[2],
+                        buf,
+                        state,
+                    );
                 }
             }
         } else {
@@ -73,7 +93,7 @@ impl StatefulWidget for SingleLog {
     }
 }
 
-pub fn render_exception(exception: &FullException) -> ScrollbarTable {
+pub fn render_exception(exception: &FullException, path_prefix_length: usize) -> ScrollbarTable {
     let header = [
         Text::from("File"),
         Text::from("Line").alignment(Alignment::Right),
@@ -90,24 +110,44 @@ pub fn render_exception(exception: &FullException) -> ScrollbarTable {
         Constraint::Min(10),
         Constraint::Percentage(60),
     ];
-    let rows = exception.stack().flat_map(exception_trace);
+    let rows = exception
+        .stack()
+        .flat_map(move |e| exception_trace(e, path_prefix_length));
     ScrollbarTable::new(rows, widths).header(header)
 }
 
-fn exception_trace(exception: &FullException) -> impl Iterator<Item = Row> + '_ {
+fn exception_trace(
+    exception: &FullException,
+    path_prefix_length: usize,
+) -> impl Iterator<Item = Row> + '_ {
     let exception_row = Row::new([
-        Text::from(exception.file.as_str()),
+        Text::from(
+            exception
+                .file
+                .as_str()
+                .get(path_prefix_length..)
+                .unwrap_or_default(),
+        ),
         Text::from(exception.line.to_string()).alignment(Alignment::Right),
         Text::from(""),
     ])
     .style(TABLE_HEADER_STYLE);
-    let trace_rows = exception.trace.iter().map(trace_line);
+    let trace_rows = exception
+        .trace
+        .iter()
+        .map(move |t| trace_line(t, path_prefix_length));
     once(exception_row).chain(trace_rows)
 }
 
-fn trace_line(trace: &Trace) -> Row {
+fn trace_line(trace: &Trace, path_prefix_length: usize) -> Row {
     Row::new([
-        Text::from(trace.file.as_str()),
+        Text::from(
+            trace
+                .file
+                .as_str()
+                .get(path_prefix_length..)
+                .unwrap_or_default(),
+        ),
         Text::from(if trace.line > 0 {
             trace.line.to_string()
         } else {
@@ -116,4 +156,23 @@ fn trace_line(trace: &Trace) -> Row {
         .alignment(Alignment::Right),
         Text::from(trace.function().to_string()),
     ])
+}
+
+fn find_path_prefix_length<'a, I: Iterator<Item = &'a str>>(paths: I) -> usize {
+    let patterns = [
+        "/3rdparty/",
+        "/apps/",
+        "/lib/private",
+        "/remote.php",
+        "/public.php",
+        "/index.php",
+    ];
+    for path in paths {
+        for pattern in patterns {
+            if let Some(offset) = path.find(pattern) {
+                return offset + 1;
+            }
+        }
+    }
+    0
 }
