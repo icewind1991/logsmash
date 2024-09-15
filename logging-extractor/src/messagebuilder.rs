@@ -108,11 +108,14 @@ impl MessageBuilder {
                             node.child_by_field_name("arguments").expect("no arguments");
                         let mut arguments = arguments.children(&mut cursor).skip(1); // opening bracket
                         let mut cursor = node.walk();
-                        let fmt = string_parts(arguments.next().unwrap().child(0).unwrap(), code, &mut cursor);
-                        let mut arguments = arguments.filter_map(|arg| {
-                            (arg.grammar_name() != ",")
-                                .then(|| arg.utf8_text(code.as_bytes()).unwrap())
-                        });
+                        let fmt = string_parts(
+                            arguments.next().unwrap().child(0).unwrap(),
+                            code,
+                            &mut cursor,
+                        );
+                        let mut arguments = arguments
+                            .filter(|arg| arg.grammar_name() != ",")
+                            .map(|arg| arg.utf8_text(code.as_bytes()).unwrap());
                         for part in fmt {
                             match part {
                                 MessagePart::Literal(lit) => self.push_printf(&lit, &mut arguments),
@@ -173,7 +176,7 @@ fn string_parts<'cursor, 'node: 'cursor>(
                     unescape::<SingleQuoteString>(raw)
                 }
                 .unwrap();
-                Some(MessagePart::Literal(content.into()))
+                Some(MessagePart::Literal(content))
             }
             r#"'"# | r#"""# | r#"{"# | r#"}"# => None,
             _ => {

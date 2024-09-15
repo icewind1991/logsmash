@@ -47,7 +47,7 @@ fn build_pattern(parts: &[crate::MessagePart]) -> String {
         match part {
             crate::MessagePart::Literal(literal) => pattern.push_str(literal.as_str()),
             crate::MessagePart::PlaceHolder(_placeholder) => {
-                pattern.push_str("\0");
+                pattern.push('\0');
             }
         }
     }

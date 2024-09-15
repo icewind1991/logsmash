@@ -1,28 +1,20 @@
 use std::collections::HashMap;
 
 pub fn resolve_name(namespace: &str, aliases: &HashMap<&str, &str>, class: &str) -> String {
-    if class.starts_with('\\') {
-        return class[1..].into();
+    if let Some(stripped) = class.strip_prefix('\\') {
+        return stripped.into();
     }
     let (first_part, rest) = class.split_once('\\').unwrap_or((class, ""));
     if let Some(alias) = aliases.get(first_part) {
         if rest.is_empty() {
-            format!("{alias}")
+            alias.to_string()
         } else {
             format!("{alias}\\{rest}")
         }
     } else if namespace.is_empty() {
-        if rest.is_empty() {
-            format!("{first_part}")
-        } else {
-            format!("{first_part}\\{rest}")
-        }
+        class.to_string()
     } else {
-        if rest.is_empty() {
-            format!("{namespace}\\{first_part}")
-        } else {
-            format!("{namespace}\\{first_part}\\{rest}")
-        }
+        format!("{namespace}\\{class}")
     }
 }
 
