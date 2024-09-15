@@ -60,10 +60,14 @@ impl ScrollbarTableState {
         self.table.selected().unwrap_or_default()
     }
 
-    pub fn up(&mut self, step: usize) -> usize {
+    pub fn offset(&self) -> usize {
+        self.table.offset()
+    }
+
+    pub fn up(&mut self, step: usize, rollover: bool) -> usize {
         let current = self.table.selected().unwrap_or(0);
         let after = if step > current {
-            if step == 1 {
+            if rollover {
                 self.count - 1
             } else {
                 0
@@ -76,10 +80,10 @@ impl ScrollbarTableState {
         after
     }
 
-    pub fn down(&mut self, step: usize) -> usize {
+    pub fn down(&mut self, step: usize, rollover: bool) -> usize {
         let current = self.table.selected().unwrap_or(0);
         let after = if step >= self.count - current {
-            if step == 1 {
+            if rollover {
                 0
             } else {
                 self.count - 1

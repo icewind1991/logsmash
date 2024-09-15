@@ -132,15 +132,15 @@ impl<'a> UiState<'a> {
             (UiState::Quit, _) => (true, UiState::Quit),
             (_, UiEvent::Quit) => (true, UiState::Quit),
             (UiState::MatchList(_), UiEvent::Back) => (true, UiState::Quit),
-            (mut state, UiEvent::Down(step)) => {
+            (mut state, UiEvent::Down(step, rollover)) => {
                 if let Some(table_state) = state.table_state() {
-                    table_state.down(step);
+                    table_state.down(step, rollover);
                 }
                 (true, state)
             }
-            (mut state, UiEvent::Up(step)) => {
+            (mut state, UiEvent::Up(step, rollover)) => {
                 if let Some(table_state) = state.table_state() {
-                    table_state.up(step);
+                    table_state.up(step, rollover);
                 }
                 (true, state)
             }
@@ -254,8 +254,8 @@ impl<'a> UiState<'a> {
 pub enum UiEvent {
     Quit,
     Back,
-    Up(usize),
-    Down(usize),
+    Up(usize, bool),
+    Down(usize, bool),
     Errors,
     Select,
     Copy,

@@ -10,7 +10,7 @@ use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
     ErrorState, LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState,
 };
-use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
+use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseEventKind};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -19,6 +19,7 @@ use ratatui::prelude::*;
 use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
+use std::time::Duration;
 
 mod error_list;
 mod footer;
@@ -34,6 +35,7 @@ mod table;
 pub fn run_ui(app: App) -> Result<(), UiError> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
+    stdout().execute(EnableMouseCapture)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     terminal.clear().ok();
 
@@ -51,14 +53,15 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
     }
 
     disable_raw_mode()?;
+    stdout().execute(DisableMouseCapture)?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
 
 fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
-    if event::poll(std::time::Duration::from_millis(50))? {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Press {
+    if event::poll(Duration::from_millis(50))? {
+        match event::read()? {
+            Event::Key(key) if key.kind == event::KeyEventKind::Press=> {
                 return Ok(match key.code {
                     KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
                         Some(UiEvent::Quit)
@@ -67,28 +70,38 @@ fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
                     KeyCode::Esc => Some(UiEvent::Back),
                     KeyCode::Char('e') if page == UiPage::MatchList => Some(UiEvent::Errors),
                     KeyCode::Left if page != UiPage::MatchList => Some(UiEvent::Back),
-                    KeyCode::Down => Some(UiEvent::Down(1)),
-                    KeyCode::Up => Some(UiEvent::Up(1)),
-                    KeyCode::PageDown => Some(UiEvent::Down(10)),
-                    KeyCode::PageUp => Some(UiEvent::Up(10)),
-                    KeyCode::End => Some(UiEvent::Down(usize::MAX)),
-                    KeyCode::Home => Some(UiEvent::Up(usize::MAX)),
+                    KeyCode::Down => Some(UiEvent::Down(1, true)),
+                    KeyCode::Up => Some(UiEvent::Up(1, true)),
+                    KeyCode::PageDown => Some(UiEvent::Down(10, false)),
+                    KeyCode::PageUp => Some(UiEvent::Up(10, false)),
+                    KeyCode::End => Some(UiEvent::Down(usize::MAX, false)),
+                    KeyCode::Home => Some(UiEvent::Up(usize::MAX, false)),
                     KeyCode::Enter | KeyCode::Right => Some(UiEvent::Select),
                     KeyCode::Char('c') => Some(UiEvent::Copy),
                     _ => None,
                 });
             }
+            Event::Mouse(mouse) => {
+                return Ok(match mouse.kind {
+                    MouseEventKind::ScrollUp => Some(UiEvent::Up(1, false)),
+                    MouseEventKind::ScrollDown => Some(UiEvent::Down(1, false)),
+                    _ => None,
+                })
+            },
+            _ => {}
         }
     }
     Ok(None)
 }
+
+const UI_HEADER_SIZE: u16 = 5;
 
 fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
     let page = state.page();
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
-            Constraint::Min(5),
+            Constraint::Length(UI_HEADER_SIZE),
             Constraint::Percentage(100),
             Constraint::Length(1),
         ])
