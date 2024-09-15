@@ -5,7 +5,7 @@ use crate::{copy_osc, parse_line_full};
 use derive_more::From;
 use ratatui::widgets::TableState;
 
-#[derive(Clone, From)]
+#[derive(Clone, From, PartialEq)]
 pub enum UiState<'a> {
     MatchList(MatchListState),
     Match(MatchState<'a>),
@@ -26,6 +26,12 @@ impl MatchListState {
     }
 }
 
+impl PartialEq for MatchListState {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 #[derive(Clone)]
 pub struct MatchState<'a> {
     pub result: &'a LogMatch,
@@ -39,11 +45,23 @@ impl<'a> MatchState<'a> {
     }
 }
 
+impl PartialEq for MatchState<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.result.result == other.result.result
+    }
+}
+
 #[derive(Clone)]
 pub struct LogsState<'a> {
     pub lines: &'a [usize],
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
+}
+
+impl PartialEq for LogsState<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.lines == other.lines
+    }
 }
 
 #[derive(Clone)]
@@ -52,9 +70,9 @@ pub struct ErrorState<'a> {
     pub previous: Box<UiState<'a>>,
 }
 
-impl<'a> LogsState<'a> {
-    fn selected(&self) -> usize {
-        self.table_state.selected()
+impl PartialEq for ErrorState<'_> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
     }
 }
 
@@ -65,6 +83,18 @@ pub struct LogState<'a> {
     pub full_line: FullLogLine,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
+}
+
+impl<'a> LogsState<'a> {
+    fn selected(&self) -> usize {
+        self.table_state.selected()
+    }
+}
+
+impl PartialEq for LogState<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.log.index == other.log.index
+    }
 }
 
 impl<'a> UiState<'a> {
