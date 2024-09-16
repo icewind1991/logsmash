@@ -24,7 +24,7 @@ pub struct LogLine<'a> {
     pub level: LogLevel,
     pub message: Cow<'a, str>,
     pub exception: Option<Exception<'a>>,
-    pub app: &'a str,
+    pub app: Cow<'a, str>,
     #[serde(with = "date")]
     pub time: OffsetDateTime,
 }
@@ -40,9 +40,12 @@ mod date {
     use time::parsing::Parsable;
     use time::{OffsetDateTime, PrimitiveDateTime};
 
-    const FORMATS: &[&[BorrowedFormatItem]] = &[format_description!(
-        "[year]-[month]-[day] [hour]:[minute]:[second]"
-    )];
+    const FORMATS: &[&[BorrowedFormatItem]] = &[
+        format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
+        format_description!(
+            "[month repr:long case_sensitive:false] [day], [year] [hour]:[minute]:[second]"
+        ),
+    ];
 
     fn try_format(str: &str, format: &(impl Parsable + ?Sized)) -> Option<OffsetDateTime> {
         if let Ok(date) = OffsetDateTime::parse(str, format) {

@@ -102,7 +102,10 @@ impl ScrollbarTableState {
 
     pub fn scroll(&mut self, step: isize) {
         *self.table.offset_mut() = self.table.offset().saturating_add_signed(step);
-        let selected = self.selected().saturating_add_signed(step).min(self.count - 1);
+        let selected = self
+            .selected()
+            .saturating_add_signed(step)
+            .min(self.count - 1);
         self.table.select(Some(selected));
         self.scrollbar = self.scrollbar.position(selected);
     }

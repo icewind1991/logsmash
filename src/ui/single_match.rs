@@ -35,7 +35,7 @@ fn group_row<'a>(app: &'a App, group: &'a GroupedLines) -> Row<'a> {
 
     Row::new([
         Text::from(line.level.as_str()),
-        Text::from(line.app),
+        Text::from(line.app.as_ref()),
         Text::from(line.display()),
         Text::from(group.sparkline.as_str()),
         Text::from(group.len().to_string()),

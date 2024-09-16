@@ -32,7 +32,7 @@ pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize]) -> ScrollbarTable<'a> {
 fn log_row<'a>(line: &'a LogLine<'a>) -> Row<'a> {
     Row::new([
         Text::from(line.level.as_str()),
-        Text::from(line.app),
+        Text::from(line.app.as_ref()),
         Text::from(line.display()),
         Text::from(format_time(line.time)).alignment(Alignment::Right),
     ])

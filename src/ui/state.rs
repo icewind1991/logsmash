@@ -1,4 +1,3 @@
-use std::iter::once;
 use crate::app::{App, LogMatch};
 use crate::logline::{FullLogLine, LogLine};
 use crate::ui::table::ScrollbarTableState;
@@ -6,6 +5,7 @@ use crate::ui::UI_HEADER_SIZE;
 use crate::{copy_osc, parse_line_full};
 use derive_more::From;
 use ratatui::widgets::TableState;
+use std::iter::once;
 
 #[derive(Clone, From, PartialEq)]
 pub enum UiState<'a> {
@@ -213,7 +213,11 @@ impl<'a> UiState<'a> {
             UiState::MatchList(MatchListState { app, .. }) => {
                 let mut total_height = 0;
                 let match_row_counts = app.matches.iter().map(|m| m.row_count());
-                for (index, row_count) in once(1).chain(match_row_counts).chain(once(1)).enumerate().skip(self.scroll_offset())
+                for (index, row_count) in once(1)
+                    .chain(match_row_counts)
+                    .chain(once(1))
+                    .enumerate()
+                    .skip(self.scroll_offset())
                 {
                     if total_height > row {
                         return index - 1;

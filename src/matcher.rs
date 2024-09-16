@@ -327,7 +327,7 @@ fn test_matcher() {
         Some(MatchResult::Single(0)),
         matcher.match_log(&LogLine {
             version: "29",
-            app: "core",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename a shared album".into(),
             exception: None,
@@ -339,7 +339,7 @@ fn test_matcher() {
         Some(MatchResult::List(vec![3, 4])),
         matcher.match_log(&LogLine {
             version: "29",
-            app: "core",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename an album".into(),
             exception: None,
@@ -351,7 +351,7 @@ fn test_matcher() {
         Some(MatchResult::Single(1)),
         matcher.match_log(&LogLine {
             version: "29",
-            app: "core",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
@@ -363,7 +363,7 @@ fn test_matcher() {
         None,
         matcher.match_log(&LogLine {
             version: "29",
-            app: "core",
+            app: "core".into(),
             level: LogLevel::Info,
             message: "You are not allowed to edit link shares that you don't own".into(),
             exception: None,
@@ -376,7 +376,7 @@ fn test_matcher() {
         matcher.match_log(
             &LogLine {
                 version: "29",
-                app: "core",
+                app: "core".into(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: None,
@@ -390,7 +390,7 @@ fn test_matcher() {
         matcher.match_log(
             &LogLine {
                 version: "29",
-                app: "core",
+                app: "core".into(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
                 exception: Some(Exception {
@@ -408,7 +408,7 @@ fn test_matcher() {
         Some(MatchResult::Single(5)),
         matcher.match_log(&LogLine {
             version: "29",
-            app: "core",
+            app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename 'foo to' to to2".into(),
             exception: None,
