@@ -1,5 +1,10 @@
 {
   "server": {
+    "30": {
+      "version": "30.0.0",
+      "url": "https://download.nextcloud.com/server/releases/nextcloud-30.0.0.zip",
+      "sha256": "sha256-2o23BCUd/Cogh+wtcj1FBZwarNX6RTE07pbLuAC35oE="
+    },
     "29": {
       "version": "29.0.3",
       "url": "https://download.nextcloud.com/server/releases/nextcloud-29.0.3.zip",
