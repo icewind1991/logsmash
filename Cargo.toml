@@ -3,6 +3,7 @@ name = "logsmash"
 version = "0.1.5"
 edition = "2021"
 rust-version = "1.74.0"
+license = "GPL-3"
 
 [dependencies]
 main_error = "0.1.2"
