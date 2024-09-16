@@ -10,7 +10,10 @@ use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
     ErrorState, LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState,
 };
-use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseEventKind};
+use ratatui::crossterm::event::{
+    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseButton,
+    MouseEventKind,
+};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -47,7 +50,7 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
             terminal.draw(|frame| ui(frame, &app, &mut ui_state))?;
         }
         update = false;
-        if let Some(event) = handle_events(ui_state.page())? {
+        if let Some(event) = handle_events(ui_state.page(), &ui_state)? {
             (update, ui_state) = ui_state.process(event, &app);
         }
     }
@@ -58,10 +61,10 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
     Ok(())
 }
 
-fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
+fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>> {
     if event::poll(Duration::from_millis(50))? {
         match event::read()? {
-            Event::Key(key) if key.kind == event::KeyEventKind::Press=> {
+            Event::Key(key) if key.kind == event::KeyEventKind::Press => {
                 return Ok(match key.code {
                     KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
                         Some(UiEvent::Quit)
@@ -85,13 +88,29 @@ fn handle_events(page: UiPage) -> io::Result<Option<UiEvent>> {
                 return Ok(match mouse.kind {
                     MouseEventKind::ScrollUp => Some(UiEvent::Up(1, false)),
                     MouseEventKind::ScrollDown => Some(UiEvent::Down(1, false)),
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        find_hit_row(mouse.row, ui_state).map(UiEvent::Enter)
+                    }
                     _ => None,
                 })
-            },
+            }
             _ => {}
         }
     }
     Ok(None)
+}
+
+fn find_hit_row(row: u16, ui_state: &UiState) -> Option<usize> {
+    if let Some(table_row) = row.checked_sub(ui_state.content_offset()) {
+        let selected = ui_state.index_for_row(table_row as usize);
+        if selected < ui_state.row_count() {
+            Some(selected)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 const UI_HEADER_SIZE: u16 = 5;
@@ -109,7 +128,7 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
 
     match state {
         UiState::Quit => {}
-        UiState::MatchList(MatchListState { table_state }) => {
+        UiState::MatchList(MatchListState { table_state, .. }) => {
             let selected = table_state.selected();
             let histogram = if selected == 0 {
                 &app.all.histogram

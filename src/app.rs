@@ -61,6 +61,10 @@ impl LogMatch {
             grouped,
         }
     }
+
+    pub fn row_count(&self) -> usize {
+        self.result.as_ref().map(|res| res.len()).unwrap_or(1)
+    }
 }
 
 impl LogMatch {
