@@ -13,13 +13,18 @@ impl LogFile {
         let mut file = File::open(path)?;
         if path.ends_with(".zip") {
             let mut zip = ZipArchive::new(file)?;
-            if zip.len() > 1 {
+            let files: Vec<_> = zip
+                .file_names()
+                .enumerate()
+                .filter(|(_, name)| !name.starts_with("__MACOSX"))
+                .collect();
+            if files.len() > 1 {
                 return Err(ReadError::MultipleFiles);
-            } else if zip.is_empty() {
+            } else if files.is_empty() {
                 return Err(ReadError::NoFiles);
             }
 
-            let mut log = zip.by_index(0)?;
+            let mut log = zip.by_index(files[0].0)?;
             let mut content = String::with_capacity(log.size() as usize);
             log.read_to_string(&mut content)?;
 
