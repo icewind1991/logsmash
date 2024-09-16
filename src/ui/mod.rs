@@ -22,6 +22,7 @@ use ratatui::prelude::*;
 use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
+use std::panic::{set_hook, take_hook};
 use std::time::Duration;
 
 mod error_list;
@@ -36,10 +37,8 @@ pub mod style;
 mod table;
 
 pub fn run_ui(app: App) -> Result<(), UiError> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    stdout().execute(EnableMouseCapture)?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    init_panic_hook();
+    let mut terminal = init_tui()?;
     terminal.clear().ok();
 
     let mut ui_state = UiState::new(&app);
@@ -55,6 +54,26 @@ pub fn run_ui(app: App) -> Result<(), UiError> {
         }
     }
 
+    Ok(())
+}
+
+pub fn init_panic_hook() {
+    let original_hook = take_hook();
+    set_hook(Box::new(move |panic_info| {
+        // intentionally ignore errors here since we're already in a panic
+        let _ = restore_tui();
+        original_hook(panic_info);
+    }));
+}
+
+pub fn init_tui() -> io::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    stdout().execute(EnableMouseCapture)?;
+    Terminal::new(CrosstermBackend::new(stdout()))
+}
+
+pub fn restore_tui() -> io::Result<()> {
     disable_raw_mode()?;
     stdout().execute(DisableMouseCapture)?;
     stdout().execute(LeaveAlternateScreen)?;
