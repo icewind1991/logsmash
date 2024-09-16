@@ -259,6 +259,12 @@ impl<'a> UiState<'a> {
                 }
                 (true, state)
             }
+            (mut state, UiEvent::Scroll(step)) => {
+                if let Some(table_state) = state.table_state_mut() {
+                    table_state.scroll(step);
+                }
+                (true, state)
+            }
             (mut state, UiEvent::SelectAt(selected)) => {
                 if let Some(table_state) = state.table_state_mut() {
                     table_state.select(selected);
@@ -333,6 +339,7 @@ pub enum UiEvent {
     Back,
     Up(usize, bool),
     Down(usize, bool),
+    Scroll(isize),
     Errors,
     Select,
     #[allow(dead_code)]

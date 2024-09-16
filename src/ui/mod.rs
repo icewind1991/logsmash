@@ -86,8 +86,8 @@ fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>
             }
             Event::Mouse(mouse) => {
                 return Ok(match mouse.kind {
-                    MouseEventKind::ScrollUp => Some(UiEvent::Up(1, false)),
-                    MouseEventKind::ScrollDown => Some(UiEvent::Down(1, false)),
+                    MouseEventKind::ScrollUp => Some(UiEvent::Scroll(-1)),
+                    MouseEventKind::ScrollDown => Some(UiEvent::Scroll(1)),
                     MouseEventKind::Down(MouseButton::Left) => {
                         find_hit_row(mouse.row, ui_state).map(UiEvent::Enter)
                     }
