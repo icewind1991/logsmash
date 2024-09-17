@@ -195,5 +195,21 @@
       "sha256": "sha256-FazftNLLdxlnt7libXG4Ngyi6hyyxC2VhX/PXEard98=",
       "prefix": "/apps/files_retention"
     }
+  },
+  "onlyoffice": {
+    "9": {
+      "version": "9.3.0",
+      "url": "https://github.com/ONLYOFFICE/onlyoffice-nextcloud/releases/download/v9.3.0/onlyoffice.tar.gz",
+      "sha256": "sha256-9H/ASllarwmSEWCpPGmm6qy7NgSt3NXzJgBxz5v0Db8=",
+      "prefix": "/apps/onlyoffice"
+    }
+  },
+  "impersonate": {
+    "1": {
+      "version": "1.17.0",
+      "url": "https://github.com/nextcloud-releases/impersonate/releases/download/v1.17.0/impersonate-v1.17.0.tar.gz",
+      "sha256": "sha256-8qcUxtmiv4+BKxqajEWzZj6HTgjZvSuKiJlNjpvFIuk=",
+      "prefix": "/apps/impersonate"
+    }
   }
 }
