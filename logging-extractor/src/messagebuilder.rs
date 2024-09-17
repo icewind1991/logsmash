@@ -28,7 +28,7 @@ impl MessageBuilder {
                 start = placeholder.end();
             }
             if start < content.len() {
-                Self::push_literal_inner(&mut self.parts, content)
+                Self::push_literal_inner(&mut self.parts, &content[start..])
             }
         } else {
             Self::push_literal_inner(&mut self.parts, content)
@@ -198,5 +198,26 @@ fn test_printf() {
             MessagePart::Literal(" foo".into())
         ],
         builder.parts
+    )
+}
+
+#[test]
+fn test_push_pattern_literal() {
+    fn push_str(str: &str) -> Vec<MessagePart> {
+        let mut builder = MessageBuilder::with_capacity(4);
+        builder.push_literal(str);
+        builder.parts
+    }
+    assert_eq!(
+        vec![
+            MessagePart::Literal(r#"Trusted domain error. ""#.into()),
+            MessagePart::PlaceHolder(r#"{remoteAddress}"#.into()),
+            MessagePart::Literal(r#"" tried to access using ""#.into()),
+            MessagePart::PlaceHolder(r#"{host}"#.into()),
+            MessagePart::Literal(r#"" as host."#.into()),
+        ],
+        push_str(
+            r#"Trusted domain error. "{remoteAddress}" tried to access using "{host}" as host."#
+        )
     )
 }

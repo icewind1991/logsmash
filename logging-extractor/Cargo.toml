@@ -31,3 +31,7 @@ cc = "1.1.6"
 maplit = "1.0.2"
 test-case = "3.3.1"
 insta = { version = "1.39.0", features = ["json"] }
+
+[profile.profiling]
+inherits = "release"
+debug = true
