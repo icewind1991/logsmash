@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::string::{unescape, DoubleQuoteString, SingleQuoteString};
 use crate::MessagePart;
 use regex::Regex;
@@ -81,7 +82,7 @@ impl MessageBuilder {
         }
     }
 
-    pub fn push_node(&mut self, node: Node, code: &str) {
+    pub fn push_node(&mut self, node: Node, code: &str, context: &mut HashMap<&str, Node>) {
         let mut cursor = node.walk();
         match node.grammar_name() {
             "string" | "encapsed_string" => {
@@ -93,9 +94,20 @@ impl MessageBuilder {
                 let operator = &code[start..end];
                 if operator.trim() == "." {
                     for part in node.named_children(&mut cursor) {
-                        self.push_node(part, code);
+                        self.push_node(part, code, context);
                     }
                 }
+            }
+            "variable_name" => {
+                let name = node.child(1).map(|c| c.utf8_text(code.as_bytes()).unwrap()).unwrap_or_default();
+                if let Some(replacement) = context.remove(name) {
+                    if has_literal(replacement, code, context) {
+                        self.push_node(replacement, code, context);
+                        return;
+                    }
+                }
+                let placeholder = node.utf8_text(code.as_bytes()).unwrap();
+                self.push_placeholder(placeholder);
             }
             "member_call_expression" | "function_call_expression" => {
                 match node
@@ -142,6 +154,12 @@ impl MessageBuilder {
     pub fn is_meaningful(&self) -> bool {
         self.parts.iter().any(|part| matches!(part, MessagePart::Literal(part) if part.contains(|c: char| c.is_ascii_alphanumeric())))
     }
+}
+
+fn has_literal(node: Node, code: &str, context: &HashMap<&str, Node>) -> bool {
+    let mut replacement_builder = MessageBuilder::with_capacity(4);
+    replacement_builder.push_node(node.clone(), code, &mut context.clone());
+    replacement_builder.parts.iter().any(|part| matches!(part, MessagePart::Literal(_)))
 }
 
 impl From<MessageBuilder> for Vec<MessagePart> {

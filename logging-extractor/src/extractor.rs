@@ -86,8 +86,9 @@ impl LogExtractor {
                 let mut message_builder = MessageBuilder::with_capacity(16);
 
                 if let Some(argument) = call.arguments {
+                    let mut context = self.get_context_assignments(code, argument);
                     let argument = argument.child(0)?;
-                    message_builder.push_node(argument, code);
+                    message_builder.push_node(argument, code, &mut context);
                 }
 
                 let exception = call
@@ -211,6 +212,24 @@ impl LogExtractor {
             })
             .unwrap_or("")
     }
+
+    fn get_context_assignments<'a>(&'a self, code: &'a str, mut node: Node<'a>) -> HashMap<&'a str, Node<'a>> {
+        let mut assignments = HashMap::new();
+        let mut cursor = node.walk();
+        while let Some(parent) = node.parent() {
+            node = parent;
+            if ["method_declaration", "function_definition"].contains(&parent.grammar_name()) {
+                break;
+            }
+            let child_assignments = node.children(&mut cursor)
+                .filter_map(|child| (child.grammar_name() == "expression_statement").then(|| child.child(0).unwrap()))
+                .filter(|child| child.grammar_name() == "assignment_expression")
+                .filter_map(|child| Some((child.child_by_field_name("left")?.child(1).unwrap(), child.child_by_field_name("right")?)))
+                .map(|(left, right)| (left.utf8_text(code.as_bytes()).unwrap(), right));
+            assignments.extend(child_assignments);
+        }
+        assignments
+    }
 }
 
 impl Default for LogExtractor {
@@ -247,6 +266,8 @@ fn test_extract_logging() {
         $this->logger->error("foo {bar} {asd}");
         $this->logger->error($this->l10n->t("translated %s", $foo));
         throw new InvalidArgumentException(sprintf('Argument "%s" not found.', $key));
+        $baseMsg = 'Could not resolve ' . $name . '!';
+        throw new QueryNotFoundException($baseMsg . ' ' . $e->getMessage());
       }
     ?>
     "#;
@@ -395,6 +416,22 @@ fn test_extract_logging() {
                 MessagePart::Literal(r#"Argument ""#.into()),
                 MessagePart::PlaceHolder("$key".into()),
                 MessagePart::Literal(r#"" not found."#.into()),
+            ]
+        }
+    );
+    assert_eq!(
+        logs[11],
+        LoggingStatement {
+            path: "foo.php",
+            line: 19,
+            level: LogLevel::Exception,
+            has_meaningful_message: true,
+            exception: Some("Test\\QueryNotFoundException".into()),
+            message_parts: vec![
+                MessagePart::Literal(r#"Could not resolve "#.into()),
+                MessagePart::PlaceHolder("$name".into()),
+                MessagePart::Literal(r#"! "#.into()),
+                MessagePart::PlaceHolder(r#"$e->getMessage()"#.into()),
             ]
         }
     );
