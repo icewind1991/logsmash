@@ -41,7 +41,7 @@ impl StatefulWidget for SingleLog {
     {
         if let Some(line) = self.line {
             let par = Paragraph::new(format!(
-                "{}\n\n  {} {}\n  {}\n\n  {} from {} by {} at {}",
+                "{}\n\n  {} {}\n  {}\n\n  {} from {} by {} at {} - Nextcloud {}",
                 line.message,
                 line.method,
                 line.url,
@@ -50,6 +50,7 @@ impl StatefulWidget for SingleLog {
                 line.remote_address,
                 line.user,
                 format_time(line.time),
+                line.version,
             ))
             .wrap(Wrap::default());
 
