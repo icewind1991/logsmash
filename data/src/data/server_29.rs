@@ -8552,4 +8552,3 @@ pub const STATEMENTS: &[crate::LoggingStatement] = &[
 	crate :: LoggingStatement { level : crate :: LogLevel :: Unknown , path : "/updater/index.php" , line : 1393usize , placeholders : & [] , exception : None , pattern : "[error] POST request failed with other exception\u{1}\u{1}" , has_meaningful_message : true , },
 	crate :: LoggingStatement { level : crate :: LogLevel :: Unknown , path : "/updater/index.php" , line : 1409usize , placeholders : & [] , exception : None , pattern : "[info] show HTML page\u{1}\u{1}" , has_meaningful_message : true , },
 ];
-

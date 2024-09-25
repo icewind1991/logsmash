@@ -228,4 +228,3 @@ pub const STATEMENTS: &[crate::LoggingStatement] = &[
 	crate :: LoggingStatement { level : crate :: LogLevel :: Exception , path : "/vendor/justinrainbow/json-schema/src/JsonSchema/Uri/UriRetriever.php" , line : 150usize , placeholders : & ["$pathElement" , "$uri"] , exception : Some ("JsonSchema\\Exception\\ResourceNotFoundException") , pattern : "Fragment part \"\0\" is no object  in \0\u{1}\u{1}" , has_meaningful_message : true , },
 	crate :: LoggingStatement { level : crate :: LogLevel :: Exception , path : "/vendor/justinrainbow/json-schema/src/JsonSchema/Uri/UriRetriever.php" , line : 213usize , placeholders : & ["$error"] , exception : Some ("JsonSchema\\Exception\\JsonDecodingException") , pattern : "\0\u{1}\u{1}" , has_meaningful_message : false , },
 ];
-

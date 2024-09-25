@@ -42,4 +42,3 @@ pub const STATEMENTS: &[crate::LoggingStatement] = &[
 	crate :: LoggingStatement { level : crate :: LogLevel :: Exception , path : "/lib/Scanner/ScannerFactory.php" , line : 52usize , placeholders : & ["$avMode"] , exception : Some ("InvalidArgumentException") , pattern : "Application is misconfigured. Please check the settings at the admin page. Invalid mode: \0\u{1}\u{1}" , has_meaningful_message : true , },
 	crate :: LoggingStatement { level : crate :: LogLevel :: Error , path : "/lib/Status.php" , line : 86usize , placeholders : & ["__METHOD__" , "$e->getMessage()"] , exception : None , pattern : "\0, exception: \0\u{1}\u{1}" , has_meaningful_message : true , },
 ];
-
