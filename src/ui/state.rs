@@ -31,10 +31,10 @@ impl<'a> MatchListState<'a> {
     fn enter(self, selected: usize, app: &'a App) -> UiState<'a> {
         let result = if selected == 0 {
             &app.all
-        } else if selected == app.match_lines() - 1 {
-            &app.unmatched
-        } else {
+        } else if selected <= app.matches.len() {
             &app.matches[selected - 1]
+        } else {
+            &app.unmatched
         };
         let table_state = ScrollbarTableState::new(result.grouped.len());
         UiState::Match(MatchState {
