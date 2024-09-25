@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use crate::string::{unescape, DoubleQuoteString, SingleQuoteString};
 use crate::MessagePart;
 use regex::Regex;
 use sprintf::parser::{parse_format_string, FormatElement};
+use std::collections::HashMap;
 use tree_sitter::{Node, TreeCursor};
 
 pub struct MessageBuilder {
@@ -99,7 +99,10 @@ impl MessageBuilder {
                 }
             }
             "variable_name" => {
-                let name = node.child(1).map(|c| c.utf8_text(code.as_bytes()).unwrap()).unwrap_or_default();
+                let name = node
+                    .child(1)
+                    .map(|c| c.utf8_text(code.as_bytes()).unwrap())
+                    .unwrap_or_default();
                 if let Some(replacement) = context.remove(name) {
                     if has_literal(replacement, code, context) {
                         self.push_node(replacement, code, context);
@@ -159,7 +162,10 @@ impl MessageBuilder {
 fn has_literal(node: Node, code: &str, context: &HashMap<&str, Node>) -> bool {
     let mut replacement_builder = MessageBuilder::with_capacity(4);
     replacement_builder.push_node(node.clone(), code, &mut context.clone());
-    replacement_builder.parts.iter().any(|part| matches!(part, MessagePart::Literal(_)))
+    replacement_builder
+        .parts
+        .iter()
+        .any(|part| matches!(part, MessagePart::Literal(_)))
 }
 
 impl From<MessageBuilder> for Vec<MessagePart> {

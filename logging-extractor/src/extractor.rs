@@ -213,7 +213,11 @@ impl LogExtractor {
             .unwrap_or("")
     }
 
-    fn get_context_assignments<'a>(&'a self, code: &'a str, mut node: Node<'a>) -> HashMap<&'a str, Node<'a>> {
+    fn get_context_assignments<'a>(
+        &'a self,
+        code: &'a str,
+        mut node: Node<'a>,
+    ) -> HashMap<&'a str, Node<'a>> {
         let mut assignments = HashMap::new();
         let mut cursor = node.walk();
         while let Some(parent) = node.parent() {
@@ -221,10 +225,19 @@ impl LogExtractor {
             if ["method_declaration", "function_definition"].contains(&parent.grammar_name()) {
                 break;
             }
-            let child_assignments = node.children(&mut cursor)
-                .filter_map(|child| (child.grammar_name() == "expression_statement").then(|| child.child(0).unwrap()))
+            let child_assignments = node
+                .children(&mut cursor)
+                .filter_map(|child| {
+                    (child.grammar_name() == "expression_statement")
+                        .then(|| child.child(0).unwrap())
+                })
                 .filter(|child| child.grammar_name() == "assignment_expression")
-                .filter_map(|child| Some((child.child_by_field_name("left")?.child(1).unwrap(), child.child_by_field_name("right")?)))
+                .filter_map(|child| {
+                    Some((
+                        child.child_by_field_name("left")?.child(1).unwrap(),
+                        child.child_by_field_name("right")?,
+                    ))
+                })
                 .map(|(left, right)| (left.utf8_text(code.as_bytes()).unwrap(), right));
             assignments.extend(child_assignments);
         }
