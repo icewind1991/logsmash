@@ -1,8 +1,9 @@
-{
-  packages,
-  lib,
-  writeTextDir,
-}: let
+{ packages
+, lib
+, writeTextDir
+,
+}:
+let
   inherit (builtins) head attrNames concatStringsSep replaceStrings;
   inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.lists) flatten last;
@@ -33,4 +34,5 @@
         }
     }
   '';
-in writeTextDir "mod.rs" code
+in
+writeTextDir "mod.rs" code
