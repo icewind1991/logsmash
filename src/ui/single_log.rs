@@ -1,28 +1,24 @@
-use crate::app::App;
-use crate::logline::{format_time, FullException, FullLogLine, LogLine, Trace};
-use crate::parse_line_full;
+use crate::logline::{format_time, FullException, FullLogLine, Trace};
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::{ScrollbarTable, ScrollbarTableState};
 use ratatui::prelude::*;
 use ratatui::widgets::{Cell, Paragraph, Row, Wrap};
 use std::iter::once;
 
-pub fn single_log(app: &App, line: &LogLine) -> SingleLog {
-    let raw_line = app.get_line(line.index);
-    let line = raw_line.and_then(|raw_line| parse_line_full(raw_line).ok());
+pub fn single_log(line: &FullLogLine) -> SingleLog {
     SingleLog::new(line)
 }
 
-pub struct SingleLog {
-    line: Option<FullLogLine>,
+pub struct SingleLog<'a> {
+    line: &'a FullLogLine,
     path_prefix_length: usize,
 }
 
-impl SingleLog {
-    pub fn new(line: Option<FullLogLine>) -> Self {
+impl<'a> SingleLog<'a> {
+    pub fn new(line: &'a FullLogLine) -> Self {
         let path_prefix_length = line
+            .exception
             .as_ref()
-            .and_then(|line| line.exception.as_ref())
             .map(|ex| find_path_prefix_length(ex.trace.iter().map(|t| t.file.as_str())))
             .unwrap_or_default();
         SingleLog {
@@ -32,65 +28,61 @@ impl SingleLog {
     }
 }
 
-impl StatefulWidget for SingleLog {
+impl StatefulWidget for SingleLog<'_> {
     type State = ScrollbarTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
     where
         Self: Sized,
     {
-        if let Some(line) = self.line {
-            let par = Paragraph::new(format!(
-                "{}\n\n  {} {}\n  {}\n\n  {} from {} by {} at {} - Nextcloud {}",
-                line.message,
-                line.method,
-                line.url,
-                line.user_agent,
-                line.request_id,
-                line.remote_address,
-                line.user,
-                format_time(line.time),
-                line.version,
-            ))
-            .wrap(Wrap::default());
+        let line = self.line;
+        let par = Paragraph::new(format!(
+            "{}\n\n  {} {}\n  {}\n\n  {} from {} by {} at {} - Nextcloud {}",
+            line.message,
+            line.method,
+            line.url,
+            line.user_agent,
+            line.request_id,
+            line.remote_address,
+            line.user,
+            format_time(line.time),
+            line.version,
+        ))
+        .wrap(Wrap::default());
 
-            let layout = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![
-                    Constraint::Min(7),
-                    Constraint::Min(5),
-                    Constraint::Percentage(100),
-                ])
-                .split(area);
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Min(7),
+                Constraint::Min(5),
+                Constraint::Percentage(100),
+            ])
+            .split(area);
 
-            par.render(layout[0], buf);
+        par.render(layout[0], buf);
 
-            if let Some(exception) = &line.exception {
-                if line.message.contains(&exception.message) {
-                    StatefulWidget::render(
-                        render_exception(exception, self.path_prefix_length),
-                        layout[1].union(layout[2]),
-                        buf,
-                        state,
-                    );
-                } else {
-                    let ex_par = Paragraph::new(format!(
-                        "\n{}:\n  {}",
-                        exception.exception, exception.message
-                    ))
-                    .wrap(Wrap::default());
-                    ex_par.render(layout[1], buf);
-                    StatefulWidget::render(
-                        render_exception(exception, self.path_prefix_length),
-                        layout[2],
-                        buf,
-                        state,
-                    );
-                }
+        if let Some(exception) = &line.exception {
+            if line.message.contains(&exception.message) {
+                StatefulWidget::render(
+                    render_exception(exception, self.path_prefix_length),
+                    layout[1].union(layout[2]),
+                    buf,
+                    state,
+                );
+            } else {
+                let ex_par = Paragraph::new(format!(
+                    "\n{}:\n  {}",
+                    exception.exception, exception.message
+                ))
+                .wrap(Wrap::default());
+                ex_par.render(layout[1], buf);
+                StatefulWidget::render(
+                    render_exception(exception, self.path_prefix_length),
+                    layout[2],
+                    buf,
+                    state,
+                );
             }
-        } else {
-            let par = Paragraph::new("Failed to parse log line").wrap(Wrap::default());
-            par.render(area, buf);
         }
     }
 }

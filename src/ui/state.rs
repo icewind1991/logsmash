@@ -110,7 +110,6 @@ impl<'a> LogsState<'a> {
         UiState::Log(LogState {
             log,
             full_line,
-            trace_len,
             table_state,
             previous: Box::new(self.into()),
         })
@@ -137,7 +136,6 @@ impl PartialEq for ErrorState<'_> {
 
 #[derive(Clone)]
 pub struct LogState<'a> {
-    pub trace_len: usize,
     pub log: &'a LogLine<'a>,
     pub full_line: FullLogLine,
     pub table_state: ScrollbarTableState,

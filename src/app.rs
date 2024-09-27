@@ -4,11 +4,8 @@ use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::StatementList;
 use std::collections::BTreeMap;
-use time::OffsetDateTime;
 
 pub struct App<'a> {
-    pub first_date: OffsetDateTime,
-    pub last_date: OffsetDateTime,
     pub lines: Vec<LogLine<'a>>,
     pub log_statements: StatementList,
     pub matches: Vec<LogMatch>,

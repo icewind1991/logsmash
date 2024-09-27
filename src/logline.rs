@@ -137,6 +137,7 @@ pub struct Exception<'a> {
 }
 
 #[derive(Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct FullLogLine {
     #[serde(rename = "reqId")]
     pub request_id: TinyAsciiStr<32>,
@@ -158,6 +159,7 @@ pub struct FullLogLine {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
+#[allow(dead_code)]
 pub struct FullException {
     pub exception: String,
     pub message: String,
@@ -170,6 +172,7 @@ pub struct FullException {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
+#[allow(dead_code)]
 pub enum ExceptionCode {
     Num(isize),
     String(String),
@@ -184,6 +187,7 @@ impl FullException {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 pub struct Trace {
     #[serde(default)]
     pub file: String,

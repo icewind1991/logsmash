@@ -130,8 +130,6 @@ fn main() -> MainResult {
         .collect();
 
     let app = App {
-        first_date: parsed_lines[0].time,
-        last_date: parsed_lines.last().unwrap().time,
         lines: parsed_lines,
         log_statements: statements,
         error_lines,
