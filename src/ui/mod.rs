@@ -143,7 +143,7 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             Constraint::Percentage(100),
             Constraint::Length(1),
         ])
-        .split(frame.size());
+        .split(frame.area());
 
     match state {
         UiState::Quit => {}

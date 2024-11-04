@@ -23,7 +23,7 @@ impl<'a> ScrollbarTable<'a> {
         ScrollbarTable {
             table: Table::new(rows, widths)
                 .block(Block::new().borders(Borders::RIGHT))
-                .highlight_style(TABLE_SELECTED_STYLE)
+                .row_highlight_style(TABLE_SELECTED_STYLE)
                 .highlight_spacing(HighlightSpacing::Always),
             scrollbar: Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(Some("↑"))
