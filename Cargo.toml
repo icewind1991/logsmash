@@ -2,7 +2,7 @@
 name = "logsmash"
 version = "0.1.5"
 edition = "2021"
-rust-version = "1.74.0"
+rust-version = "1.75.0"
 license = "GPL-3"
 
 [dependencies]
@@ -25,6 +25,7 @@ ahash = "0.8.11"
 base64 = "0.21.7"
 derive_more = { version = "1.0.0-beta.6", features = ["from"] }
 rayon = "1.10.0"
+tar = "0.4.42"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.6.0"

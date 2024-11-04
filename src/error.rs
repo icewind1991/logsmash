@@ -1,3 +1,4 @@
+use std::string::FromUtf8Error;
 use thiserror::Error;
 use zip::result::ZipError;
 
@@ -25,4 +26,6 @@ pub enum ReadError {
     MultipleFiles,
     #[error("archive contains no files")]
     NoFiles,
+    #[error("log file contained non-utf8 characters: {0:#}")]
+    Utf8(#[from] FromUtf8Error),
 }
