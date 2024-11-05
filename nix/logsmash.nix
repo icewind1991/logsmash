@@ -6,18 +6,17 @@
 ,
 }:
 let
-  inherit (lib.sources) sourceByRegex;
+  inherit (lib) sourceByRegex readFile;
   src = sourceByRegex ../. [ "Cargo.*" "(src|data)(/.*)?" ];
   rustPlatform = makeRustPlatform {
     cargo = rust-bin.stable.latest.default;
     rustc = rust-bin.stable.latest.default;
   };
+  version = (fromTOML (readFile ../Cargo.toml)).package.version;
 in
 rustPlatform.buildRustPackage rec {
   pname = "logsmash";
-  version = "0.1.0";
-
-  inherit src;
+  inherit version src;
 
   preBuild = ''
     rm -r data/src/data
