@@ -1,3 +1,4 @@
+use ruzstd::frame_decoder::FrameDecoderError;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 use zip::result::ZipError;
@@ -22,6 +23,8 @@ pub enum ReadError {
     Io(#[from] std::io::Error),
     #[error(transparent)]
     Zip(#[from] ZipError),
+    #[error(transparent)]
+    Zstd(#[from] FrameDecoderError),
     #[error("archive contains multiple files")]
     MultipleFiles,
     #[error("archive contains no files")]

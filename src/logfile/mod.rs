@@ -2,9 +2,12 @@ mod archive;
 
 use crate::error::ReadError;
 use crate::logfile::archive::{Archive, ArchiveEntry, TarArchive, ZipArchive};
+use bzip2_rs::DecoderReader;
 use flate2::read::GzDecoder;
+use ruzstd::StreamingDecoder;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
+use xz2::read::XzDecoder;
 
 pub struct LogFile {
     content: String,
@@ -13,6 +16,7 @@ pub struct LogFile {
 impl LogFile {
     pub fn open(path: &str) -> Result<LogFile, ReadError> {
         let file = File::open(path)?;
+        let file = BufReader::new(file);
         if path.ends_with(".zip") {
             let mut zip = ZipArchive::new(file)?;
             let content = select_file(&mut zip)?;
@@ -22,6 +26,15 @@ impl LogFile {
 
         if let Some(path) = path.strip_suffix(".gz") {
             let decoder = GzDecoder::new(file);
+            return Self::open_no_seek(path, decoder);
+        } else if let Some(path) = path.strip_suffix(".xz") {
+            let decoder = XzDecoder::new(file);
+            return Self::open_no_seek(path, decoder);
+        } else if let Some(path) = path.strip_suffix(".bz2") {
+            let decoder = DecoderReader::new(file);
+            return Self::open_no_seek(path, decoder);
+        } else if let Some(path) = path.strip_suffix(".zst") {
+            let decoder = StreamingDecoder::new(file)?;
             return Self::open_no_seek(path, decoder);
         }
 
