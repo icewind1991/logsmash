@@ -15,7 +15,8 @@ logsmash ./logfile.log
 
 ## Log files
 
-Logsmash supports both loading plain log files, or zip files containing (only) the log.
+Logsmash supports both loading plain log files, compressed log files (`.gz`, `.bz2`, `.xz` or `.zst`), or archives
+containing log files (`.zip` or (compressed) `.tar`).
 
 ## Log sources
 
@@ -99,10 +100,6 @@ Currently, the program can match against data from the following sources:
 
 ## Roadmap
 
-- [ ] More flexible log file input
-  - [x] Log files compressed trough gzip
-  - [ ] Log files compressed trough other compression methods
-  - [ ] Archived containing more than one file
 - [ ] Data from more app version
 - [ ] Support extracting app versions from a system report
 - [ ] Add filtering to all lists

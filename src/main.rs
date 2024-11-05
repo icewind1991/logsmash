@@ -6,7 +6,7 @@ use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use base64::prelude::*;
 use clap::Parser;
-use indicatif::{ParallelProgressIterator};
+use indicatif::{ParallelProgressIterator, ProgressStyle};
 use logsmash_data::{default_apps, get_statements, SourceDefinition};
 use main_error::MainResult;
 use rayon::prelude::*;
@@ -71,7 +71,10 @@ fn main() -> MainResult {
     );
     let matcher = Matcher::new(&statements);
 
-    let line_count = lines.len();
+    let progress_style = ProgressStyle::with_template(
+        "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg} {eta}",
+    )
+    .expect("invalid progress bar style");
 
     let mut results: Vec<_> = lines
         .into_par_iter()
@@ -83,14 +86,12 @@ fn main() -> MainResult {
             parsed.map_err(|err| (index, line, err))
         })
         .map(|parsed| {
-            let res = parsed.map(|parsed| {
+            parsed.map(|parsed| {
                 let log_match = matcher.match_log(&parsed);
                 (parsed, log_match)
-            });
-            // bar.inc(1);
-            res
+            })
         })
-        .progress_count(line_count as u64)
+        .progress_with_style(progress_style)
         .collect();
 
     results.sort_by_key(|res| match res {
