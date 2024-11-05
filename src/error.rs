@@ -25,8 +25,6 @@ pub enum ReadError {
     Zip(#[from] ZipError),
     #[error(transparent)]
     Zstd(#[from] FrameDecoderError),
-    #[error("archive contains multiple files")]
-    MultipleFiles,
     #[error("archive contains no files")]
     NoFiles,
     #[error("log file contained non-utf8 characters: {0:#}")]

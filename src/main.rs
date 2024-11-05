@@ -11,6 +11,8 @@ use main_error::MainResult;
 use rayon::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
 use std::iter::once;
 
 mod app;
@@ -39,7 +41,9 @@ struct Args {
 fn main() -> MainResult {
     let args = Args::parse();
 
-    let log_file = LogFile::open(&args.file).map_err(|err| LogError::Read {
+    let file = File::open(&args.file)?;
+    let file = BufReader::new(file);
+    let log_file = LogFile::open(&args.file, file).map_err(|err| LogError::Read {
         err,
         path: args.file,
     })?;
