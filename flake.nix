@@ -15,6 +15,12 @@
       "x86_64-unknown-linux-musl"
       "x86_64-pc-windows-gnu"
     ];
+    packageOpts = {extracted-logs-rust, ...}: {
+      preBuild = ''
+        rm -r -f data/src/data
+        cp -r ${extracted-logs-rust} data/src/data
+      '';
+    };
     withOverlays = import ./nix/overlay.nix;
     packages = {
       logsmash = { logsmash }: logsmash;
