@@ -244,7 +244,7 @@ impl<'a> UiState<'a> {
         }
     }
 
-    pub fn process(self, event: UiEvent, app: &'a App<'a>) -> (bool, UiState) {
+    pub fn process(self, event: UiEvent, app: &'a App<'a>) -> (bool, UiState<'a>) {
         match (self, event) {
             (UiState::Quit, _) => (true, UiState::Quit),
             (_, UiEvent::Quit) => (true, UiState::Quit),

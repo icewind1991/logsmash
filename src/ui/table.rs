@@ -116,7 +116,7 @@ impl ScrollbarTableState {
     }
 }
 
-impl<'a> StatefulWidget for ScrollbarTable<'a> {
+impl StatefulWidget for ScrollbarTable<'_> {
     type State = ScrollbarTableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
