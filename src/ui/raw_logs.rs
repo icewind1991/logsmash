@@ -6,7 +6,7 @@ use ratatui::layout::{Alignment, Constraint};
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 
-pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize]) -> ScrollbarTable<'a> {
+pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize], filter: &str) -> ScrollbarTable<'a> {
     let lines = lines.iter().copied().map(|i| &app.lines[i]);
     let header = [
         Text::from("Level"),
@@ -26,7 +26,11 @@ pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize]) -> ScrollbarTable<'a> {
         Constraint::Percentage(100),
         Constraint::Length(27),
     ];
-    ScrollbarTable::new(lines.map(log_row), widths).header(header)
+    ScrollbarTable::new(
+        lines.filter(|line| line.matches(filter)).map(log_row),
+        widths,
+    )
+    .header(header)
 }
 
 fn log_row<'a>(line: &'a LogLine<'a>) -> Row<'a> {

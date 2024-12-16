@@ -125,6 +125,14 @@ impl<'a> LogLine<'a> {
             Cow::Borrowed(&self.message)
         }
     }
+
+    pub fn matches(&self, filter: &str) -> bool {
+        if filter.is_empty() {
+            return true;
+        }
+        // todo: reqid, more?
+        self.app.contains(filter) || self.message.contains(filter)
+    }
 }
 
 #[derive(Deserialize, Debug, Hash)]

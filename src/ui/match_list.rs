@@ -7,7 +7,7 @@ use ratatui::widgets::{Cell, Row};
 use std::fmt::Write;
 use std::iter::{empty, once};
 
-pub fn match_list<'a>(app: &'a App<'a>) -> ScrollbarTable<'a> {
+pub fn match_list<'a>(app: &'a App<'a>, filter: &str) -> ScrollbarTable<'a> {
     let header = [
         Text::from("Statement"),
         Text::from("File"),
@@ -38,7 +38,12 @@ pub fn match_list<'a>(app: &'a App<'a>) -> ScrollbarTable<'a> {
 
     ScrollbarTable::new(
         once(all)
-            .chain(app.matches.iter().map(|result| log_row(result, app, "")))
+            .chain(
+                app.matches
+                    .iter()
+                    .filter(|result| result.matches(app, filter))
+                    .map(|result| log_row(result, app, "")),
+            )
             .chain(unmatched),
         widths,
     )

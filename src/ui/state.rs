@@ -1,5 +1,6 @@
 use crate::app::{App, LogMatch};
 use crate::logline::{FullLogLine, LogLine};
+use crate::ui::footer::FooterParams;
 use crate::ui::table::ScrollbarTableState;
 use crate::ui::UI_HEADER_SIZE;
 use crate::{copy_osc, parse_line_full};
@@ -17,10 +18,18 @@ pub enum UiState<'a> {
     Quit,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Mode {
+    Normal,
+    FilterInput,
+}
+
 #[derive(Clone)]
 pub struct MatchListState<'a> {
     app: &'a App<'a>,
     pub table_state: ScrollbarTableState,
+    pub filter: String,
+    mode: Mode,
 }
 
 impl<'a> MatchListState<'a> {
@@ -32,7 +41,15 @@ impl<'a> MatchListState<'a> {
         let result = if selected == 0 {
             &app.all
         } else if selected <= app.matches.len() {
-            &app.matches[selected - 1]
+            if self.filter.is_empty() {
+                &app.matches[selected - 1]
+            } else {
+                app.matches
+                    .iter()
+                    .filter(|log_match| log_match.matches(app, &self.filter))
+                    .nth(selected - 1)
+                    .expect("filtered select out of bounds")
+            }
         } else {
             &app.unmatched
         };
@@ -41,6 +58,8 @@ impl<'a> MatchListState<'a> {
             result,
             table_state,
             previous: Box::new(self.into()),
+            filter: String::new(),
+            mode: Mode::Normal,
         })
     }
 }
@@ -56,6 +75,8 @@ pub struct MatchState<'a> {
     pub result: &'a LogMatch,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
+    pub filter: String,
+    mode: Mode,
 }
 
 impl<'a> MatchState<'a> {
@@ -63,16 +84,28 @@ impl<'a> MatchState<'a> {
         self.table_state.selected()
     }
 
-    fn enter(self, selected: usize) -> UiState<'a> {
+    fn enter(self, selected: usize, app: &'a App) -> UiState<'a> {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
 
-        let lines = self.result.grouped[selected].lines.as_slice();
+        let selected_line = if self.filter.is_empty() {
+            &self.result.grouped[selected]
+        } else {
+            self.result
+                .grouped
+                .iter()
+                .filter(|grouped| grouped.matches(app, &self.filter))
+                .nth(selected)
+                .expect("filtered select out of bounds")
+        };
+        let lines = selected_line.lines.as_slice();
         let table_state = ScrollbarTableState::new(lines.len());
         UiState::Logs(LogsState {
             lines,
             table_state,
             previous: Box::new(self.into()),
+            filter: String::new(),
+            mode: Mode::Normal,
         })
     }
 }
@@ -88,6 +121,8 @@ pub struct LogsState<'a> {
     pub lines: &'a [usize],
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
+    pub filter: String,
+    mode: Mode,
 }
 
 impl<'a> LogsState<'a> {
@@ -96,7 +131,17 @@ impl<'a> LogsState<'a> {
     }
 
     fn enter(self, selected: usize, app: &'a App<'a>) -> UiState<'a> {
-        let line = self.lines[selected];
+        let line = if self.filter.is_empty() {
+            self.lines[selected]
+        } else {
+            self.lines
+                .iter()
+                .map(|index| &app.lines[*index])
+                .filter(|line| line.matches(&self.filter))
+                .nth(selected)
+                .map(|line| line.index)
+                .expect("filtered select out of bounds")
+        };
         let log = &app.lines[line];
         let raw_line = app.get_line(log.index).unwrap();
         let full_line = parse_line_full(raw_line).unwrap();
@@ -155,6 +200,8 @@ impl<'a> UiState<'a> {
         UiState::MatchList(MatchListState {
             app,
             table_state: ScrollbarTableState::new(app.match_lines()),
+            filter: String::new(),
+            mode: Mode::Normal,
         })
     }
 
@@ -165,6 +212,42 @@ impl<'a> UiState<'a> {
             UiState::Logs(_) => UiPage::Logs,
             UiState::Log(_) => UiPage::Log,
             UiState::Errors(_) => UiPage::Errors,
+        }
+    }
+
+    pub fn mode(&self) -> Mode {
+        match self {
+            UiState::MatchList(state) => state.mode,
+            UiState::Match(state) => state.mode,
+            UiState::Logs(state) => state.mode,
+            _ => Mode::Normal,
+        }
+    }
+
+    pub fn set_mode(&mut self, mode: Mode) {
+        match self {
+            UiState::MatchList(state) => state.mode = mode,
+            UiState::Match(state) => state.mode = mode,
+            UiState::Logs(state) => state.mode = mode,
+            _ => {}
+        }
+    }
+
+    pub fn filter(&self) -> Option<&str> {
+        match self {
+            UiState::MatchList(state) => Some(&state.filter),
+            UiState::Match(state) => Some(&state.filter),
+            UiState::Logs(state) => Some(&state.filter),
+            _ => None,
+        }
+    }
+
+    pub fn filter_mut(&mut self) -> Option<&mut String> {
+        match self {
+            UiState::MatchList(state) => Some(&mut state.filter),
+            UiState::Match(state) => Some(&mut state.filter),
+            UiState::Logs(state) => Some(&mut state.filter),
+            _ => None,
         }
     }
 
@@ -208,9 +291,13 @@ impl<'a> UiState<'a> {
 
     pub fn index_for_row(&self, row: usize) -> usize {
         match self {
-            UiState::MatchList(MatchListState { app, .. }) => {
+            UiState::MatchList(MatchListState { app, filter, .. }) => {
                 let mut total_height = 0;
-                let match_row_counts = app.matches.iter().map(|m| m.row_count());
+                let match_row_counts = app
+                    .matches
+                    .iter()
+                    .filter(|m| m.matches(app, filter))
+                    .map(|m| m.row_count());
                 for (index, row_count) in once(1)
                     .chain(match_row_counts)
                     .chain(once(1))
@@ -248,7 +335,12 @@ impl<'a> UiState<'a> {
         match (self, event) {
             (UiState::Quit, _) => (true, UiState::Quit),
             (_, UiEvent::Quit) => (true, UiState::Quit),
-            (UiState::MatchList(_), UiEvent::Back) => (true, UiState::Quit),
+            (
+                UiState::MatchList(MatchListState {
+                    mode: Mode::Normal, ..
+                }),
+                UiEvent::Back,
+            ) => (true, UiState::Quit),
             (mut state, UiEvent::Down(step, rollover)) => {
                 if let Some(table_state) = state.table_state_mut() {
                     table_state.down(step, rollover);
@@ -292,9 +384,9 @@ impl<'a> UiState<'a> {
             }
             (UiState::Match(state), UiEvent::Select) => {
                 let selected = state.selected();
-                (true, state.enter(selected))
+                (true, state.enter(selected, app))
             }
-            (UiState::Match(state), UiEvent::Enter(selected)) => (true, state.enter(selected)),
+            (UiState::Match(state), UiEvent::Enter(selected)) => (true, state.enter(selected, app)),
             (UiState::Logs(state), UiEvent::Select) => {
                 let selected = state.selected();
                 (true, state.enter(selected, app))
@@ -324,6 +416,43 @@ impl<'a> UiState<'a> {
                 copy_osc(raw);
                 (false, UiState::Errors(state))
             }
+            (mut ui, UiEvent::EnterFilterMode) if ui.mode() != Mode::FilterInput => {
+                ui.set_mode(Mode::FilterInput);
+                (true, ui)
+            }
+            (mut ui, UiEvent::Text(c)) if ui.mode() == Mode::FilterInput => {
+                if let Some(filter) = ui.filter_mut() {
+                    filter.push(c);
+                }
+                (true, ui)
+            }
+            (mut ui, UiEvent::Backspace) if ui.mode() == Mode::FilterInput => {
+                if let Some(filter) = ui.filter_mut() {
+                    filter.pop();
+                }
+                (true, ui)
+            }
+            (mut ui, UiEvent::ClearFilter) if ui.mode() != Mode::Normal => {
+                if let Some(filter) = ui.filter_mut() {
+                    filter.clear();
+                }
+                ui.set_mode(Mode::Normal);
+                (true, ui)
+            }
+            (
+                mut ui @ UiState::MatchList(MatchListState {
+                    mode: Mode::FilterInput,
+                    ..
+                }),
+                UiEvent::Back,
+            ) => {
+                if let Some(filter) = ui.filter_mut() {
+                    filter.clear();
+                }
+                ui.set_mode(Mode::Normal);
+                (true, ui)
+            }
+
             (
                 UiState::Match(MatchState { previous, .. })
                 | UiState::Logs(LogsState { previous, .. })
@@ -332,6 +461,13 @@ impl<'a> UiState<'a> {
                 UiEvent::Back,
             ) => (true, *previous),
             (state, _) => (false, state),
+        }
+    }
+
+    pub fn footer_params(&self) -> FooterParams {
+        match self.mode() {
+            Mode::Normal => FooterParams::Normal(self.page()),
+            Mode::FilterInput => FooterParams::FilterInput(self.filter().unwrap_or_default()),
         }
     }
 }
@@ -348,6 +484,10 @@ pub enum UiEvent {
     SelectAt(usize),
     Enter(usize),
     Copy,
+    EnterFilterMode,
+    ClearFilter,
+    Text(char),
+    Backspace,
 }
 
 #[derive(PartialEq)]

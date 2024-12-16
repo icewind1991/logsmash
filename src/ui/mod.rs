@@ -8,7 +8,7 @@ use crate::ui::raw_logs::raw_logs;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
-    ErrorState, LogState, LogsState, MatchListState, MatchState, UiEvent, UiPage, UiState,
+    ErrorState, LogState, LogsState, MatchListState, MatchState, Mode, UiEvent, UiPage, UiState,
 };
 use ratatui::crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseButton,
@@ -84,22 +84,31 @@ fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>
     if event::poll(Duration::from_millis(50))? {
         match event::read()? {
             Event::Key(key) if key.kind == event::KeyEventKind::Press => {
-                return Ok(match key.code {
-                    KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                return Ok(match (ui_state.mode(), key.code) {
+                    (_, KeyCode::Char('c')) if key.modifiers == KeyModifiers::CONTROL => {
                         Some(UiEvent::Quit)
                     }
-                    KeyCode::Char('q') => Some(UiEvent::Quit),
-                    KeyCode::Esc => Some(UiEvent::Back),
-                    KeyCode::Char('e') if page == UiPage::MatchList => Some(UiEvent::Errors),
-                    KeyCode::Left if page != UiPage::MatchList => Some(UiEvent::Back),
-                    KeyCode::Down => Some(UiEvent::Down(1, true)),
-                    KeyCode::Up => Some(UiEvent::Up(1, true)),
-                    KeyCode::PageDown => Some(UiEvent::Down(10, false)),
-                    KeyCode::PageUp => Some(UiEvent::Up(10, false)),
-                    KeyCode::End => Some(UiEvent::Down(usize::MAX, false)),
-                    KeyCode::Home => Some(UiEvent::Up(usize::MAX, false)),
-                    KeyCode::Enter | KeyCode::Right => Some(UiEvent::Select),
-                    KeyCode::Char('c') => Some(UiEvent::Copy),
+                    (Mode::Normal, KeyCode::Esc) => Some(UiEvent::Back),
+
+                    (Mode::Normal, KeyCode::Char('q')) => Some(UiEvent::Quit),
+                    (Mode::Normal, KeyCode::Char('e')) if page == UiPage::MatchList => {
+                        Some(UiEvent::Errors)
+                    }
+                    (_, KeyCode::Left) if page != UiPage::MatchList => Some(UiEvent::Back),
+                    (_, KeyCode::Down) => Some(UiEvent::Down(1, true)),
+                    (_, KeyCode::Up) => Some(UiEvent::Up(1, true)),
+                    (_, KeyCode::PageDown) => Some(UiEvent::Down(10, false)),
+                    (_, KeyCode::PageUp) => Some(UiEvent::Up(10, false)),
+                    (_, KeyCode::End) => Some(UiEvent::Down(usize::MAX, false)),
+                    (_, KeyCode::Home) => Some(UiEvent::Up(usize::MAX, false)),
+                    (_, KeyCode::Enter | KeyCode::Right) => Some(UiEvent::Select),
+                    (Mode::Normal, KeyCode::Char('c')) => Some(UiEvent::Copy),
+                    (Mode::Normal, KeyCode::F(4)) => Some(UiEvent::EnterFilterMode),
+
+                    (Mode::FilterInput, KeyCode::Esc) => Some(UiEvent::ClearFilter),
+                    (Mode::FilterInput, KeyCode::F(4)) => Some(UiEvent::Back),
+                    (Mode::FilterInput, KeyCode::Backspace) => Some(UiEvent::Backspace),
+                    (Mode::FilterInput, KeyCode::Char(c)) => Some(UiEvent::Text(c)),
                     _ => None,
                 });
             }
@@ -135,7 +144,6 @@ fn find_hit_row(row: u16, ui_state: &UiState) -> Option<usize> {
 const UI_HEADER_SIZE: u16 = 5;
 
 fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
-    let page = state.page();
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -147,7 +155,11 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
 
     match state {
         UiState::Quit => {}
-        UiState::MatchList(MatchListState { table_state, .. }) => {
+        UiState::MatchList(MatchListState {
+            table_state,
+            filter,
+            ..
+        }) => {
             let selected = table_state.selected();
             let histogram = if selected == 0 {
                 &app.all.histogram
@@ -159,29 +171,37 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             };
 
             frame.render_widget(UiHistogram::new(histogram), layout[0]);
-            frame.render_stateful_widget(match_list(app), layout[1], table_state);
-            frame.render_widget(footer(app, page), layout[2]);
+            frame.render_stateful_widget(match_list(app, filter), layout[1], table_state);
+            frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
         UiState::Match(MatchState {
             result,
             table_state,
+            filter,
             ..
         }) => {
             let selected_group = &result.grouped[table_state.selected()];
 
             frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
-            frame.render_stateful_widget(grouped_lines(app, result), layout[1], table_state);
-            frame.render_widget(footer(app, page), layout[2]);
+            frame.render_stateful_widget(
+                grouped_lines(app, result, filter),
+                layout[1],
+                table_state,
+            );
+            frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
         UiState::Logs(LogsState {
-            lines, table_state, ..
+            lines,
+            table_state,
+            filter,
+            ..
         }) => {
             frame.render_stateful_widget(
-                raw_logs(app, lines),
+                raw_logs(app, lines, filter),
                 layout[0].union(layout[1]),
                 table_state,
             );
-            frame.render_widget(footer(app, page), layout[2]);
+            frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
         UiState::Log(LogState {
             table_state,
@@ -193,11 +213,11 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
                 layout[0].union(layout[1]),
                 table_state,
             );
-            frame.render_widget(footer(app, page), layout[2]);
+            frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
         UiState::Errors(ErrorState { table_state, .. }) => {
             frame.render_stateful_widget(error_list(app), layout[0].union(layout[1]), table_state);
-            frame.render_widget(footer(app, page), layout[2]);
+            frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
     }
 }

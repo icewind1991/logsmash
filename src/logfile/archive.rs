@@ -60,7 +60,10 @@ impl<R: Read + Seek> ArchiveEntry for ZipEntry<'_, R> {
 }
 
 impl<R: Read + Seek> Archive for ZipArchive<R> {
-    type Entry<'a> = ZipEntry<'a, R> where R: 'a;
+    type Entry<'a>
+        = ZipEntry<'a, R>
+    where
+        R: 'a;
 
     fn entries(&mut self) -> impl Iterator<Item = Self::Entry<'_>> {
         let names = self
@@ -114,7 +117,10 @@ impl ArchiveEntry for TarEntry {
 }
 
 impl<R: Read> Archive for TarArchive<R> {
-    type Entry<'a> = TarEntry where R: 'a;
+    type Entry<'a>
+        = TarEntry
+    where
+        R: 'a;
 
     fn entries(&mut self) -> impl Iterator<Item = Self::Entry<'_>> {
         match self.0.entries() {

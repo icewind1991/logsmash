@@ -5,7 +5,11 @@ use ratatui::layout::Constraint;
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 
-pub fn grouped_lines<'a>(app: &'a App<'a>, log_match: &'a LogMatch) -> ScrollbarTable<'a> {
+pub fn grouped_lines<'a>(
+    app: &'a App<'a>,
+    log_match: &'a LogMatch,
+    filter: &str,
+) -> ScrollbarTable<'a> {
     let grouped = &log_match.grouped;
     let header = [
         Text::from("Level"),
@@ -27,7 +31,14 @@ pub fn grouped_lines<'a>(app: &'a App<'a>, log_match: &'a LogMatch) -> Scrollbar
         Constraint::Length(10),
         Constraint::Min(10),
     ];
-    ScrollbarTable::new(grouped.iter().map(|group| group_row(app, group)), widths).header(header)
+    ScrollbarTable::new(
+        grouped
+            .iter()
+            .filter(|group| group.matches(app, filter))
+            .map(|group| group_row(app, group)),
+        widths,
+    )
+    .header(header)
 }
 
 fn group_row<'a>(app: &'a App, group: &'a GroupedLines) -> Row<'a> {

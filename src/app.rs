@@ -2,7 +2,7 @@ use crate::logfile::LogFile;
 use crate::logline::LogLine;
 use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
-use logsmash_data::StatementList;
+use logsmash_data::{LoggingStatementWithPathPrefix, StatementList};
 use std::collections::BTreeMap;
 
 pub struct App<'a> {
@@ -62,6 +62,24 @@ impl LogMatch {
     pub fn row_count(&self) -> usize {
         self.result.as_ref().map(|res| res.len()).unwrap_or(1)
     }
+
+    pub fn statements<'a>(
+        &'a self,
+        app: &'a App,
+    ) -> impl Iterator<Item = LoggingStatementWithPathPrefix> + 'a {
+        self.result
+            .iter()
+            .flat_map(|res| res.iter())
+            .filter_map(|index| app.log_statements.get(index))
+    }
+
+    pub fn matches(&self, app: &App, filter: &str) -> bool {
+        if filter.is_empty() {
+            return true;
+        }
+        self.statements(app)
+            .any(|statement| statement.pattern.contains(filter))
+    }
 }
 
 impl LogMatch {
@@ -110,5 +128,13 @@ impl GroupedLines {
 
     pub fn len(&self) -> usize {
         self.lines.len()
+    }
+
+    pub fn matches(&self, app: &App, filter: &str) -> bool {
+        if filter.is_empty() {
+            return true;
+        }
+        let line = &app.lines[self.lines[0]];
+        line.message.contains(filter)
     }
 }
