@@ -139,13 +139,15 @@ impl<'a> LogLine<'a> {
             return true;
         }
         // todo: exception, more?
-        filter.matches(&self.app)
-            || filter.matches(&self.message)
-            || filter.matches(self.request_id.as_str())
-            || filter.matches(&self.url)
-            || filter.matches(&self.method)
-            || filter.matches(&self.remote)
-            || filter.matches(&self.user)
+        filter.parts().all(|filter_part| {
+            filter_part.is_match(&self.app)
+                || filter_part.is_match(&self.message)
+                || filter_part.is_match(self.request_id.as_str())
+                || filter_part.is_match(&self.url)
+                || filter_part.is_match(&self.method)
+                || filter_part.is_match(&self.remote)
+                || filter_part.is_match(&self.user)
+        })
     }
 }
 

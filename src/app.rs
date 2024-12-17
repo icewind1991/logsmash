@@ -87,17 +87,19 @@ impl LogMatch {
             return true;
         }
         self.statements(app).any(|statement| {
-            filter.matches(statement.pattern)
-                || filter.matches(statement.path)
-                || filter.matches(statement.path_prefix)
-                || statement
-                    .placeholders
-                    .iter()
-                    .any(|placeholder| filter.matches(placeholder))
-                || statement
-                    .exception
-                    .filter(|exception| filter.matches(exception))
-                    .is_some()
+            filter.parts().all(|filter_part| {
+                filter_part.is_match(statement.pattern)
+                    || filter_part.is_match(statement.path)
+                    || filter_part.is_match(statement.path_prefix)
+                    || statement
+                        .placeholders
+                        .iter()
+                        .any(|placeholder| filter_part.is_match(placeholder))
+                    || statement
+                        .exception
+                        .filter(|exception| filter_part.is_match(exception))
+                        .is_some()
+            })
         })
     }
 }
@@ -155,46 +157,44 @@ impl GroupedLines {
             return true;
         }
         let line = &app.lines[self.lines[0]];
-        filter.matches(&line.message)
+        filter
+            .parts()
+            .all(|filter_part| filter_part.is_match(&line.message))
     }
 }
 
 #[derive(Default, Clone)]
 pub struct Filter {
     filter: String,
-    regex: Option<Regex>,
+    regexes: Vec<Regex>,
 }
 
 pub static EMPTY_FILTER: Filter = Filter {
     filter: String::new(),
-    regex: None,
+    regexes: Vec::new(),
 };
 
 impl Filter {
-    fn build_regex(filter: &str) -> Option<Regex> {
-        if filter.is_empty() {
-            None
-        } else {
-            Some(
-                RegexBuilder::new(&escape(&filter))
+    fn build_regex(filter: &str) -> Vec<Regex> {
+        filter
+            .split(' ')
+            .map(|part| {
+                RegexBuilder::new(&escape(part))
                     .case_insensitive(true)
                     .build()
-                    .unwrap(),
-            )
-        }
+                    .unwrap()
+            })
+            .collect()
     }
 
     #[allow(dead_code)]
     pub fn new(filter: String) -> Self {
-        let regex = Self::build_regex(&filter);
-        Filter { filter, regex }
+        let regexes = Self::build_regex(&filter);
+        Filter { filter, regexes }
     }
 
-    pub fn matches(&self, string: &str) -> bool {
-        match &self.regex {
-            Some(regex) => regex.is_match(string),
-            None => true,
-        }
+    pub fn parts(&self) -> impl Iterator<Item = &Regex> {
+        self.regexes.iter()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -203,24 +203,24 @@ impl Filter {
 
     pub fn push(&mut self, c: char) {
         self.filter.push(c);
-        self.regex = Self::build_regex(&self.filter);
+        self.regexes = Self::build_regex(&self.filter);
     }
 
     pub fn pop(&mut self) {
         self.filter.pop();
-        self.regex = Self::build_regex(&self.filter);
+        self.regexes = Self::build_regex(&self.filter);
     }
 
     pub fn pop_word(&mut self) {
         let previous_word_boundary = self.filter.trim().rfind(' ').map(|i| i + 1);
         self.filter
             .truncate(previous_word_boundary.unwrap_or_default());
-        self.regex = Self::build_regex(&self.filter);
+        self.regexes = Self::build_regex(&self.filter);
     }
 
     pub fn clear(&mut self) {
         self.filter.clear();
-        self.regex = None;
+        self.regexes = Vec::new();
     }
 }
 
