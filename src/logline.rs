@@ -21,6 +21,8 @@ pub const TIME_FORMAT: EncodedConfig = Config::DEFAULT
 pub struct LogLine<'a> {
     #[serde(default)]
     pub index: usize,
+    #[serde(rename = "reqId")]
+    pub request_id: TinyAsciiStr<32>,
     pub version: &'a str,
     pub level: LogLevel,
     pub message: Cow<'a, str>,
@@ -131,8 +133,10 @@ impl<'a> LogLine<'a> {
         if filter.is_empty() {
             return true;
         }
-        // todo: reqid, more?
-        filter.matches(&self.app) || filter.matches(&self.message)
+        // todo: exception, more?
+        filter.matches(&self.app)
+            || filter.matches(&self.message)
+            || filter.matches(self.request_id.as_str())
     }
 }
 

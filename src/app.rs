@@ -83,7 +83,14 @@ impl LogMatch {
             filter.matches(statement.pattern)
                 || filter.matches(statement.path)
                 || filter.matches(statement.path_prefix)
-            || statement.placeholders.iter().any(|placeholder| filter.matches(placeholder))
+                || statement
+                    .placeholders
+                    .iter()
+                    .any(|placeholder| filter.matches(placeholder))
+                || statement
+                    .exception
+                    .filter(|exception| filter.matches(exception))
+                    .is_some()
         })
     }
 }
