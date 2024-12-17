@@ -55,9 +55,9 @@ pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
 
 fn help(page: UiPage) -> &'static str {
     match page {
-        UiPage::MatchList => "«Q» Exit - «Enter» Select - «F4» Filter - «E» Show parse errors",
-        UiPage::Match => "«Q» Exit - «Enter» Select - «F4» Filter - «Esc» Back",
-        UiPage::Logs => "«Q» Exit - «F4» Filter - «Esc» Back - «C» Copy log line",
+        UiPage::MatchList => "«Q» Exit - «Enter» Select - «F» Filter - «E» Show parse errors",
+        UiPage::Match => "«Q» Exit - «Enter» Select - «F» Filter - «Esc» Back",
+        UiPage::Logs => "«Q» Exit - «F» Filter - «Esc» Back - «C» Copy log line",
         UiPage::Log => "«Q» Exit - «Esc» Back - «R» Toggle raw - «C» Copy log line",
         UiPage::Errors => "«Q» Exit - «Esc» Back - «C» Copy log line",
     }

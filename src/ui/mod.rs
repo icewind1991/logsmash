@@ -103,7 +103,9 @@ fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>
                     (_, KeyCode::Home) => Some(UiEvent::Up(usize::MAX, false)),
                     (_, KeyCode::Enter | KeyCode::Right) => Some(UiEvent::Select),
                     (Mode::Normal, KeyCode::Char('c')) => Some(UiEvent::Copy),
-                    (Mode::Normal, KeyCode::F(4)) => Some(UiEvent::EnterFilterMode),
+                    (Mode::Normal, KeyCode::F(4) | KeyCode::Char('f')) => {
+                        Some(UiEvent::EnterFilterMode)
+                    }
 
                     (Mode::FilterInput, KeyCode::Esc) => Some(UiEvent::ClearFilter),
                     (Mode::FilterInput, KeyCode::F(4)) => Some(UiEvent::Back),
