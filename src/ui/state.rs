@@ -53,7 +53,7 @@ impl<'a> MatchListState<'a> {
         } else {
             &app.unmatched
         };
-        let table_state = ScrollbarTableState::new(result.grouped.len());
+        let table_state = ScrollbarTableState::new(result.grouped.len() + 1);
         UiState::Match(MatchState {
             result,
             table_state,

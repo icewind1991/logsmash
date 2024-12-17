@@ -190,7 +190,12 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             filter,
             ..
         }) => {
-            let selected_group = &result.grouped[table_state.selected()];
+            let selected = table_state.selected();
+            let selected_group = if selected == 0 {
+                &result.all
+            } else {
+                &result.grouped[selected - 1]
+            };
 
             frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
             frame.render_stateful_widget(
