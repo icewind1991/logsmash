@@ -264,7 +264,9 @@ impl<'a> SingleMatchState<'a> {
 #[test]
 fn test_matcher() {
     use crate::logline::Exception;
+    use std::str::FromStr;
     use time::OffsetDateTime;
+    use tinystr::TinyAsciiStr;
 
     const STATEMENTS: &[LoggingStatement] = &[
         LoggingStatement {
@@ -322,6 +324,22 @@ fn test_matcher() {
             has_meaningful_message: true,
         },
     ];
+
+    let default_log = LogLine {
+        version: "29",
+        app: "core".into(),
+        level: LogLevel::Error,
+        message: "Not allowed to rename a shared album".into(),
+        exception: None,
+        time: OffsetDateTime::now_utc(),
+        index: 0,
+        method: TinyAsciiStr::from_str("GET").unwrap(),
+        remote: TinyAsciiStr::from_str("1.2.3.4").unwrap(),
+        user: TinyAsciiStr::from_str("user").unwrap(),
+        url: "/url".into(),
+        request_id: TinyAsciiStr::from_str("123456").unwrap(),
+    };
+
     let matcher = Matcher::new(&StatementList::new(vec![("", STATEMENTS)]));
     assert_eq!(
         Some(MatchResult::Single(0)),
@@ -330,9 +348,7 @@ fn test_matcher() {
             app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename a shared album".into(),
-            exception: None,
-            time: OffsetDateTime::now_utc(),
-            index: 0,
+            ..default_log.clone()
         })
     );
     assert_eq!(
@@ -342,9 +358,7 @@ fn test_matcher() {
             app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename an album".into(),
-            exception: None,
-            time: OffsetDateTime::now_utc(),
-            index: 0,
+            ..default_log.clone()
         })
     );
     assert_eq!(
@@ -354,9 +368,7 @@ fn test_matcher() {
             app: "core".into(),
             level: LogLevel::Error,
             message: "You are not allowed to edit link shares that you don't own".into(),
-            exception: None,
-            time: OffsetDateTime::now_utc(),
-            index: 0,
+            ..default_log.clone()
         })
     );
     assert_eq!(
@@ -366,9 +378,7 @@ fn test_matcher() {
             app: "core".into(),
             level: LogLevel::Info,
             message: "You are not allowed to edit link shares that you don't own".into(),
-            exception: None,
-            time: OffsetDateTime::now_utc(),
-            index: 0,
+            ..default_log.clone()
         })
     );
     assert_eq!(
@@ -379,9 +389,7 @@ fn test_matcher() {
                 app: "core".into(),
                 level:  LogLevel::Error,
                 message: "Unsupported query value for mimetype: %/text, only values in the format \"mime/type\" or \"mime/%\" are supported".into(),
-                exception: None,
-                time: OffsetDateTime::now_utc(),
-                index: 0,
+                ..default_log.clone()
             }
         )
     );
@@ -399,8 +407,7 @@ fn test_matcher() {
                     file: "short".into(),
                     line: 68,
                 }),
-                time: OffsetDateTime::now_utc(),
-                index: 0,
+                ..default_log.clone()
             }
         )
     );
@@ -411,9 +418,7 @@ fn test_matcher() {
             app: "core".into(),
             level: LogLevel::Error,
             message: "Not allowed to rename 'foo to' to to2".into(),
-            exception: None,
-            time: OffsetDateTime::now_utc(),
-            index: 0,
+            ..default_log.clone()
         })
     );
 }

@@ -17,7 +17,7 @@ pub const TIME_FORMAT: EncodedConfig = Config::DEFAULT
     })
     .encode();
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct LogLine<'a> {
     #[serde(default)]
     pub index: usize,
@@ -151,7 +151,7 @@ impl<'a> LogLine<'a> {
     }
 }
 
-#[derive(Deserialize, Debug, Hash)]
+#[derive(Deserialize, Debug, Hash, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Exception<'a> {
     pub message: Cow<'a, str>,
