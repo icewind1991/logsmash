@@ -88,14 +88,16 @@ impl<'a> MatchState<'a> {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
 
-        let selected_line = if self.filter.is_empty() {
-            &self.result.grouped[selected]
+        let selected_line = if selected == 0 {
+            &self.result.all
+        } else if self.filter.is_empty() {
+            &self.result.grouped[selected - 1]
         } else {
             self.result
                 .grouped
                 .iter()
                 .filter(|grouped| grouped.matches(app, &self.filter))
-                .nth(selected)
+                .nth(selected - 1)
                 .expect("filtered select out of bounds")
         };
         let lines = selected_line.lines.as_slice();

@@ -4,6 +4,7 @@ use crate::ui::table::ScrollbarTable;
 use ratatui::layout::Constraint;
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
+use std::iter::once;
 
 pub fn grouped_lines<'a>(
     app: &'a App<'a>,
@@ -32,10 +33,19 @@ pub fn grouped_lines<'a>(
         Constraint::Min(10),
     ];
     ScrollbarTable::new(
-        grouped
-            .iter()
-            .filter(|group| group.matches(app, filter))
-            .map(|group| group_row(app, group)),
+        once(Row::new([
+            Text::from("All lines"),
+            Text::from(""),
+            Text::from(""),
+            Text::from(log_match.sparkline.as_str()),
+            Text::from(log_match.lines.len().to_string()),
+        ]))
+        .chain(
+            grouped
+                .iter()
+                .filter(|group| group.matches(app, filter))
+                .map(|group| group_row(app, group)),
+        ),
         widths,
     )
     .header(header)

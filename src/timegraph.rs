@@ -2,6 +2,7 @@ use hdrhistogram::Histogram;
 use std::cmp::max;
 use time::OffsetDateTime;
 
+#[derive(Clone)]
 pub struct TimeGraph {
     histogram: Histogram<u64>,
     start: u64,

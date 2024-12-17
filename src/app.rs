@@ -38,6 +38,7 @@ pub struct LogMatch {
     pub lines: Vec<usize>,
     pub histogram: TimeGraph,
     pub sparkline: String,
+    pub all: GroupedLines,
     pub grouped: Vec<GroupedLines>,
 }
 
@@ -51,6 +52,11 @@ impl LogMatch {
         }
         let grouped = group_lines(all_lines, lines.iter().copied());
         let sparkline = histogram.sparkline::<10>();
+        let all = GroupedLines {
+            sparkline: sparkline.clone(),
+            histogram: histogram.clone(),
+            lines: lines.clone(),
+        };
 
         LogMatch {
             result,
@@ -58,6 +64,7 @@ impl LogMatch {
             histogram,
             sparkline,
             grouped,
+            all,
         }
     }
 

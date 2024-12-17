@@ -10,7 +10,6 @@ use ratatui::text::Text;
 use ratatui::widgets::{Cell, Paragraph, Row, Wrap};
 
 pub struct GroupedLogs<'a> {
-    line: &'a LogLine<'a>,
     lines: &'a [usize],
     app: &'a App<'a>,
     filter: &'a Filter,
@@ -21,13 +20,7 @@ pub fn grouped_logs<'a>(
     lines: &'a [usize],
     filter: &'a Filter,
 ) -> GroupedLogs<'a> {
-    let line = &app.lines[lines[0]];
-    GroupedLogs {
-        line,
-        lines,
-        app,
-        filter,
-    }
+    GroupedLogs { lines, app, filter }
 }
 
 impl StatefulWidget for GroupedLogs<'_> {
@@ -37,24 +30,25 @@ impl StatefulWidget for GroupedLogs<'_> {
     where
         Self: Sized,
     {
+        let line = &self.app.lines[self.lines[state.selected()]];
         let lines = self.lines.iter().copied().map(|i| &self.app.lines[i]);
 
         let par = Paragraph::new(format!(
             "{}{}{}\n\n{} from {} - Nextcloud {}",
-            self.line
+            line
                 .exception
                 .as_ref()
                 .map(|e| e.exception.as_ref())
                 .unwrap_or_default(),
-            if self.line.exception.is_some() {
+            if line.exception.is_some() {
                 ":\n"
             } else {
                 ""
             },
-            self.line.message,
-            self.line.level.as_str(),
-            self.line.app,
-            self.line.version,
+            line.message,
+            line.level.as_str(),
+            line.app,
+            line.version,
         ))
         .wrap(Wrap::default());
 
