@@ -7,8 +7,8 @@ use ratatui::text::Text;
 use ratatui::widgets::{Row, Table};
 
 pub enum FooterParams<'a> {
-    Normal(UiPage),
-    FilterInput(&'a str),
+    Normal { page: UiPage },
+    FilterInput { page: UiPage, filter: &'a str },
 }
 
 pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
@@ -17,7 +17,7 @@ pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
         .fg(tailwind::GREEN.c600);
 
     match params {
-        FooterParams::Normal(page) => {
+        FooterParams::Normal { page } => {
             let widths = [
                 Constraint::Percentage(100),
                 Constraint::Min(25),
@@ -34,8 +34,8 @@ pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
             )
             .style(footer_style)
         }
-        FooterParams::FilterInput(filter_input) => {
-            let help = "«Esc» Clear - «Left» Back";
+        FooterParams::FilterInput { filter, page } => {
+            let help = filter_help(page);
             let widths = [
                 Constraint::Min(u16::try_from(help.chars().count()).unwrap()),
                 Constraint::Percentage(100),
@@ -44,7 +44,7 @@ pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
             Table::new(
                 [Row::new([
                     Text::from(help),
-                    Text::from(format!("- Filter: {}█", filter_input)),
+                    Text::from(format!("- Filter: {}█", filter)),
                 ])],
                 widths,
             )
@@ -60,5 +60,12 @@ fn help(page: UiPage) -> &'static str {
         UiPage::Logs => "«Q» Exit - «F4» Filter - «Esc» Back - «C» Copy log line",
         UiPage::Log => "«Q» Exit - «Esc» Back - «R» Toggle raw - «C» Copy log line",
         UiPage::Errors => "«Q» Exit - «Esc» Back - «C» Copy log line",
+    }
+}
+
+fn filter_help(page: UiPage) -> &'static str {
+    match page {
+        UiPage::MatchList => "«Esc» Clear",
+        _ => "«Esc» Clear - «Left» Back",
     }
 }

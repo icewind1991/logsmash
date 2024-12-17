@@ -466,8 +466,11 @@ impl<'a> UiState<'a> {
 
     pub fn footer_params(&self) -> FooterParams {
         match self.mode() {
-            Mode::Normal => FooterParams::Normal(self.page()),
-            Mode::FilterInput => FooterParams::FilterInput(self.filter().unwrap_or_default()),
+            Mode::Normal => FooterParams::Normal { page: self.page() },
+            Mode::FilterInput => FooterParams::FilterInput {
+                filter: self.filter().unwrap_or_default(),
+                page: self.page(),
+            },
         }
     }
 }
