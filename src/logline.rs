@@ -23,6 +23,11 @@ pub struct LogLine<'a> {
     pub index: usize,
     #[serde(rename = "reqId")]
     pub request_id: TinyAsciiStr<32>,
+    pub user: TinyAsciiStr<64>,
+    pub method: TinyAsciiStr<12>,
+    pub url: Cow<'a, str>,
+    #[serde(rename = "remoteAddr")]
+    pub remote: TinyAsciiStr<40>,
     pub version: &'a str,
     pub level: LogLevel,
     pub message: Cow<'a, str>,
@@ -137,6 +142,10 @@ impl<'a> LogLine<'a> {
         filter.matches(&self.app)
             || filter.matches(&self.message)
             || filter.matches(self.request_id.as_str())
+            || filter.matches(&self.url)
+            || filter.matches(&self.method)
+            || filter.matches(&self.remote)
+            || filter.matches(&self.user)
     }
 }
 

@@ -12,7 +12,7 @@ use std::iter::once;
 pub enum UiState<'a> {
     MatchList(MatchListState<'a>),
     Match(MatchState<'a>),
-    Logs(LogsState<'a>),
+    GroupedLogs(GroupedLogsState<'a>),
     Log(LogState<'a>),
     Errors(ErrorState<'a>),
     Quit,
@@ -100,7 +100,7 @@ impl<'a> MatchState<'a> {
         };
         let lines = selected_line.lines.as_slice();
         let table_state = ScrollbarTableState::new(lines.len());
-        UiState::Logs(LogsState {
+        UiState::GroupedLogs(GroupedLogsState {
             lines,
             table_state,
             previous: Box::new(self.into()),
@@ -117,7 +117,7 @@ impl PartialEq for MatchState<'_> {
 }
 
 #[derive(Clone)]
-pub struct LogsState<'a> {
+pub struct GroupedLogsState<'a> {
     pub lines: &'a [usize],
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
@@ -125,24 +125,23 @@ pub struct LogsState<'a> {
     mode: Mode,
 }
 
-impl<'a> LogsState<'a> {
+impl<'a> GroupedLogsState<'a> {
     fn selected(&self) -> usize {
         self.table_state.selected()
     }
 
     fn enter(self, selected: usize, app: &'a App<'a>) -> UiState<'a> {
-        let line = if self.filter.is_empty() {
-            self.lines[selected]
+        let log = if self.filter.is_empty() {
+            let line = self.lines[selected];
+            &app.lines[line]
         } else {
             self.lines
                 .iter()
                 .map(|index| &app.lines[*index])
                 .filter(|line| line.matches(&self.filter))
                 .nth(selected)
-                .map(|line| line.index)
                 .expect("filtered select out of bounds")
         };
-        let log = &app.lines[line];
         let raw_line = app.get_line(log.index).unwrap();
         let full_line = parse_line_full(raw_line).unwrap();
         let trace_len = if let Some(exception) = &full_line.exception {
@@ -161,7 +160,7 @@ impl<'a> LogsState<'a> {
     }
 }
 
-impl PartialEq for LogsState<'_> {
+impl PartialEq for GroupedLogsState<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.lines == other.lines
     }
@@ -209,7 +208,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::Quit | UiState::MatchList(_) => UiPage::MatchList,
             UiState::Match(_) => UiPage::Match,
-            UiState::Logs(_) => UiPage::Logs,
+            UiState::GroupedLogs(_) => UiPage::Logs,
             UiState::Log(_) => UiPage::Log,
             UiState::Errors(_) => UiPage::Errors,
         }
@@ -219,7 +218,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => state.mode,
             UiState::Match(state) => state.mode,
-            UiState::Logs(state) => state.mode,
+            UiState::GroupedLogs(state) => state.mode,
             _ => Mode::Normal,
         }
     }
@@ -228,7 +227,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => state.mode = mode,
             UiState::Match(state) => state.mode = mode,
-            UiState::Logs(state) => state.mode = mode,
+            UiState::GroupedLogs(state) => state.mode = mode,
             _ => {}
         }
     }
@@ -237,7 +236,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => Some(&state.filter),
             UiState::Match(state) => Some(&state.filter),
-            UiState::Logs(state) => Some(&state.filter),
+            UiState::GroupedLogs(state) => Some(&state.filter),
             _ => None,
         }
     }
@@ -246,7 +245,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => Some(&mut state.filter),
             UiState::Match(state) => Some(&mut state.filter),
-            UiState::Logs(state) => Some(&mut state.filter),
+            UiState::GroupedLogs(state) => Some(&mut state.filter),
             _ => None,
         }
     }
@@ -255,7 +254,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => Some(&state.table_state),
             UiState::Match(state) => Some(&state.table_state),
-            UiState::Logs(state) => Some(&state.table_state),
+            UiState::GroupedLogs(state) => Some(&state.table_state),
             UiState::Log(state) => Some(&state.table_state),
             UiState::Errors(state) => Some(&state.table_state),
             _ => None,
@@ -266,7 +265,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(state) => Some(&mut state.table_state),
             UiState::Match(state) => Some(&mut state.table_state),
-            UiState::Logs(state) => Some(&mut state.table_state),
+            UiState::GroupedLogs(state) => Some(&mut state.table_state),
             UiState::Log(state) => Some(&mut state.table_state),
             UiState::Errors(state) => Some(&mut state.table_state),
             _ => None,
@@ -324,7 +323,7 @@ impl<'a> UiState<'a> {
         match self {
             UiState::MatchList(_) => UI_HEADER_SIZE + 1,
             UiState::Match(_) => UI_HEADER_SIZE + 1,
-            UiState::Logs(_) => 0,
+            UiState::GroupedLogs(_) => UI_HEADER_SIZE + 1,
             UiState::Log(_) => 0,
             UiState::Errors(_) => 0,
             UiState::Quit => 0,
@@ -387,12 +386,14 @@ impl<'a> UiState<'a> {
                 (true, state.enter(selected, app))
             }
             (UiState::Match(state), UiEvent::Enter(selected)) => (true, state.enter(selected, app)),
-            (UiState::Logs(state), UiEvent::Select) => {
+            (UiState::GroupedLogs(state), UiEvent::Select) => {
                 let selected = state.selected();
                 (true, state.enter(selected, app))
             }
-            (UiState::Logs(state), UiEvent::Enter(selected)) => (true, state.enter(selected, app)),
-            (UiState::Logs(state), UiEvent::Copy) => {
+            (UiState::GroupedLogs(state), UiEvent::Enter(selected)) => {
+                (true, state.enter(selected, app))
+            }
+            (UiState::GroupedLogs(state), UiEvent::Copy) => {
                 let selected = state.selected();
                 let mut table_state = TableState::default();
                 table_state.select(Some(0));
@@ -400,7 +401,7 @@ impl<'a> UiState<'a> {
                 let line = &app.lines[state.lines[selected]];
                 let raw = app.get_line(line.index).unwrap_or_default();
                 copy_osc(raw);
-                (false, UiState::Logs(state))
+                (false, UiState::GroupedLogs(state))
             }
             (UiState::Log(state), UiEvent::Copy) => {
                 let raw = app.get_line(state.log.index).unwrap_or_default();
@@ -455,7 +456,7 @@ impl<'a> UiState<'a> {
 
             (
                 UiState::Match(MatchState { previous, .. })
-                | UiState::Logs(LogsState { previous, .. })
+                | UiState::GroupedLogs(GroupedLogsState { previous, .. })
                 | UiState::Log(LogState { previous, .. })
                 | UiState::Errors(ErrorState { previous, .. }),
                 UiEvent::Back,

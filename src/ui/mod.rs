@@ -2,13 +2,14 @@ use crate::app::App;
 use crate::error::UiError;
 use crate::ui::error_list::error_list;
 use crate::ui::footer::footer;
+use crate::ui::grouped_logs::grouped_logs;
 use crate::ui::histogram::UiHistogram;
 use crate::ui::match_list::match_list;
-use crate::ui::raw_logs::raw_logs;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
-    ErrorState, LogState, LogsState, MatchListState, MatchState, Mode, UiEvent, UiPage, UiState,
+    ErrorState, GroupedLogsState, LogState, MatchListState, MatchState, Mode, UiEvent, UiPage,
+    UiState,
 };
 use ratatui::crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseButton,
@@ -27,9 +28,9 @@ use std::time::Duration;
 
 mod error_list;
 mod footer;
+mod grouped_logs;
 mod histogram;
 mod match_list;
-mod raw_logs;
 mod single_log;
 mod single_match;
 mod state;
@@ -192,14 +193,14 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             );
             frame.render_widget(footer(app, state.footer_params()), layout[2]);
         }
-        UiState::Logs(LogsState {
+        UiState::GroupedLogs(GroupedLogsState {
             lines,
             table_state,
             filter,
             ..
         }) => {
             frame.render_stateful_widget(
-                raw_logs(app, lines, filter),
+                grouped_logs(app, lines, filter),
                 layout[0].union(layout[1]),
                 table_state,
             );
