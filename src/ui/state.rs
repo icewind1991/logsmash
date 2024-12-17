@@ -429,9 +429,12 @@ impl<'a> UiState<'a> {
                 }
                 (true, ui)
             }
-            (mut ui, UiEvent::Backspace) if ui.mode() == Mode::FilterInput => {
+            (mut ui, UiEvent::PopText(pop_mode)) if ui.mode() == Mode::FilterInput => {
                 if let Some(filter) = ui.filter_mut() {
-                    filter.pop();
+                    match pop_mode {
+                        PopMode::Character => filter.pop(),
+                        PopMode::Word => filter.pop_word(),
+                    }
                 }
                 (true, ui)
             }
@@ -493,7 +496,12 @@ pub enum UiEvent {
     EnterFilterMode,
     ClearFilter,
     Text(char),
-    Backspace,
+    PopText(PopMode),
+}
+
+pub enum PopMode {
+    Character,
+    Word,
 }
 
 #[derive(PartialEq)]

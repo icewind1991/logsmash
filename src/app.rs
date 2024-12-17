@@ -211,6 +211,13 @@ impl Filter {
         self.regex = Self::build_regex(&self.filter);
     }
 
+    pub fn pop_word(&mut self) {
+        let previous_word_boundary = self.filter.trim().rfind(' ').map(|i| i + 1);
+        self.filter
+            .truncate(previous_word_boundary.unwrap_or_default());
+        self.regex = Self::build_regex(&self.filter);
+    }
+
     pub fn clear(&mut self) {
         self.filter.clear();
         self.regex = None;

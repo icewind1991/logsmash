@@ -8,8 +8,8 @@ use crate::ui::match_list::match_list;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
-    ErrorState, GroupedLogsState, LogState, MatchListState, MatchState, Mode, UiEvent, UiPage,
-    UiState,
+    ErrorState, GroupedLogsState, LogState, MatchListState, MatchState, Mode, PopMode, UiEvent,
+    UiPage, UiState,
 };
 use ratatui::crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseButton,
@@ -110,7 +110,14 @@ fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>
 
                     (Mode::FilterInput, KeyCode::Esc) => Some(UiEvent::ClearFilter),
                     (Mode::FilterInput, KeyCode::F(4)) => Some(UiEvent::Back),
-                    (Mode::FilterInput, KeyCode::Backspace) => Some(UiEvent::Backspace),
+                    (Mode::FilterInput, KeyCode::Backspace) => {
+                        Some(UiEvent::PopText(PopMode::Character))
+                    }
+                    (Mode::FilterInput, KeyCode::Char('w'))
+                        if key.modifiers == KeyModifiers::CONTROL =>
+                    {
+                        Some(UiEvent::PopText(PopMode::Word))
+                    }
                     (Mode::FilterInput, KeyCode::Char(c)) => Some(UiEvent::Text(c)),
                     _ => None,
                 });

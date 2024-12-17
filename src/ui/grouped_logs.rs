@@ -35,16 +35,11 @@ impl StatefulWidget for GroupedLogs<'_> {
 
         let par = Paragraph::new(format!(
             "{}{}{}\n\n{} from {} - Nextcloud {}",
-            line
-                .exception
+            line.exception
                 .as_ref()
                 .map(|e| e.exception.as_ref())
                 .unwrap_or_default(),
-            if line.exception.is_some() {
-                ":\n"
-            } else {
-                ""
-            },
+            if line.exception.is_some() { ":\n" } else { "" },
             line.message,
             line.level.as_str(),
             line.app,
