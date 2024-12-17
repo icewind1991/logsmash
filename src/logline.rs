@@ -1,3 +1,4 @@
+use crate::app::Filter;
 use ahash::AHasher;
 use logsmash_data::LogLevel;
 use serde::Deserialize;
@@ -126,12 +127,12 @@ impl<'a> LogLine<'a> {
         }
     }
 
-    pub fn matches(&self, filter: &str) -> bool {
+    pub fn matches(&self, filter: &Filter) -> bool {
         if filter.is_empty() {
             return true;
         }
         // todo: reqid, more?
-        self.app.contains(filter) || self.message.contains(filter)
+        filter.matches(&self.app) || filter.matches(&self.message)
     }
 }
 

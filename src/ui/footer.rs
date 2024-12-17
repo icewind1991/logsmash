@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, Filter};
 use crate::ui::state::UiPage;
 use ratatui::layout::Constraint;
 use ratatui::prelude::Style;
@@ -8,7 +8,7 @@ use ratatui::widgets::{Row, Table};
 
 pub enum FooterParams<'a> {
     Normal { page: UiPage },
-    FilterInput { page: UiPage, filter: &'a str },
+    FilterInput { page: UiPage, filter: &'a Filter },
 }
 
 pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {

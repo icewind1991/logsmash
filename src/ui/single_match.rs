@@ -1,4 +1,4 @@
-use crate::app::{App, GroupedLines, LogMatch};
+use crate::app::{App, Filter, GroupedLines, LogMatch};
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
 use ratatui::layout::Constraint;
@@ -8,7 +8,7 @@ use ratatui::widgets::{Cell, Row};
 pub fn grouped_lines<'a>(
     app: &'a App<'a>,
     log_match: &'a LogMatch,
-    filter: &str,
+    filter: &Filter,
 ) -> ScrollbarTable<'a> {
     let grouped = &log_match.grouped;
     let header = [

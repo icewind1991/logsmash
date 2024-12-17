@@ -1,4 +1,4 @@
-use crate::app::{App, LogMatch};
+use crate::app::{App, Filter, LogMatch, EMPTY_FILTER};
 use crate::logline::{FullLogLine, LogLine};
 use crate::ui::footer::FooterParams;
 use crate::ui::table::ScrollbarTableState;
@@ -28,7 +28,7 @@ pub enum Mode {
 pub struct MatchListState<'a> {
     app: &'a App<'a>,
     pub table_state: ScrollbarTableState,
-    pub filter: String,
+    pub filter: Filter,
     mode: Mode,
 }
 
@@ -58,7 +58,7 @@ impl<'a> MatchListState<'a> {
             result,
             table_state,
             previous: Box::new(self.into()),
-            filter: String::new(),
+            filter: Filter::default(),
             mode: Mode::Normal,
         })
     }
@@ -75,7 +75,7 @@ pub struct MatchState<'a> {
     pub result: &'a LogMatch,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
-    pub filter: String,
+    pub filter: Filter,
     mode: Mode,
 }
 
@@ -104,7 +104,7 @@ impl<'a> MatchState<'a> {
             lines,
             table_state,
             previous: Box::new(self.into()),
-            filter: String::new(),
+            filter: Filter::default(),
             mode: Mode::Normal,
         })
     }
@@ -121,7 +121,7 @@ pub struct LogsState<'a> {
     pub lines: &'a [usize],
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
-    pub filter: String,
+    pub filter: Filter,
     mode: Mode,
 }
 
@@ -200,7 +200,7 @@ impl<'a> UiState<'a> {
         UiState::MatchList(MatchListState {
             app,
             table_state: ScrollbarTableState::new(app.match_lines()),
-            filter: String::new(),
+            filter: Filter::default(),
             mode: Mode::Normal,
         })
     }
@@ -233,7 +233,7 @@ impl<'a> UiState<'a> {
         }
     }
 
-    pub fn filter(&self) -> Option<&str> {
+    pub fn filter(&self) -> Option<&Filter> {
         match self {
             UiState::MatchList(state) => Some(&state.filter),
             UiState::Match(state) => Some(&state.filter),
@@ -242,7 +242,7 @@ impl<'a> UiState<'a> {
         }
     }
 
-    pub fn filter_mut(&mut self) -> Option<&mut String> {
+    pub fn filter_mut(&mut self) -> Option<&mut Filter> {
         match self {
             UiState::MatchList(state) => Some(&mut state.filter),
             UiState::Match(state) => Some(&mut state.filter),
@@ -468,7 +468,7 @@ impl<'a> UiState<'a> {
         match self.mode() {
             Mode::Normal => FooterParams::Normal { page: self.page() },
             Mode::FilterInput => FooterParams::FilterInput {
-                filter: self.filter().unwrap_or_default(),
+                filter: self.filter().unwrap_or(&EMPTY_FILTER),
                 page: self.page(),
             },
         }

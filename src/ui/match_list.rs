@@ -1,4 +1,4 @@
-use crate::app::{App, LogMatch};
+use crate::app::{App, Filter, LogMatch};
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
 use itertools::Either;
@@ -7,7 +7,7 @@ use ratatui::widgets::{Cell, Row};
 use std::fmt::Write;
 use std::iter::{empty, once};
 
-pub fn match_list<'a>(app: &'a App<'a>, filter: &str) -> ScrollbarTable<'a> {
+pub fn match_list<'a>(app: &'a App<'a>, filter: &Filter) -> ScrollbarTable<'a> {
     let header = [
         Text::from("Statement"),
         Text::from("File"),

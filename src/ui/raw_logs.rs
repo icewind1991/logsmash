@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, Filter};
 use crate::logline::{format_time, LogLine};
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::ScrollbarTable;
@@ -6,7 +6,7 @@ use ratatui::layout::{Alignment, Constraint};
 use ratatui::text::Text;
 use ratatui::widgets::{Cell, Row};
 
-pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize], filter: &str) -> ScrollbarTable<'a> {
+pub fn raw_logs<'a>(app: &'a App<'a>, lines: &[usize], filter: &Filter) -> ScrollbarTable<'a> {
     let lines = lines.iter().copied().map(|i| &app.lines[i]);
     let header = [
         Text::from("Level"),

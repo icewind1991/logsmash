@@ -3,7 +3,9 @@ use crate::logline::LogLine;
 use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::{LoggingStatementWithPathPrefix, StatementList};
+use regex::{escape, Regex, RegexBuilder};
 use std::collections::BTreeMap;
+use std::fmt::Display;
 
 pub struct App<'a> {
     pub lines: Vec<LogLine<'a>>,
@@ -73,12 +75,12 @@ impl LogMatch {
             .filter_map(|index| app.log_statements.get(index))
     }
 
-    pub fn matches(&self, app: &App, filter: &str) -> bool {
+    pub fn matches(&self, app: &App, filter: &Filter) -> bool {
         if filter.is_empty() {
             return true;
         }
         self.statements(app)
-            .any(|statement| statement.pattern.contains(filter))
+            .any(|statement| filter.matches(statement.pattern))
     }
 }
 
@@ -130,11 +132,75 @@ impl GroupedLines {
         self.lines.len()
     }
 
-    pub fn matches(&self, app: &App, filter: &str) -> bool {
+    pub fn matches(&self, app: &App, filter: &Filter) -> bool {
         if filter.is_empty() {
             return true;
         }
         let line = &app.lines[self.lines[0]];
-        line.message.contains(filter)
+        filter.matches(&line.message)
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct Filter {
+    filter: String,
+    regex: Option<Regex>,
+}
+
+pub static EMPTY_FILTER: Filter = Filter {
+    filter: String::new(),
+    regex: None,
+};
+
+impl Filter {
+    fn build_regex(filter: &str) -> Option<Regex> {
+        if filter.is_empty() {
+            None
+        } else {
+            Some(
+                RegexBuilder::new(&escape(&filter))
+                    .case_insensitive(true)
+                    .build()
+                    .unwrap(),
+            )
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn new(filter: String) -> Self {
+        let regex = Self::build_regex(&filter);
+        Filter { filter, regex }
+    }
+
+    pub fn matches(&self, string: &str) -> bool {
+        match &self.regex {
+            Some(regex) => regex.is_match(string),
+            None => true,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.filter.is_empty()
+    }
+
+    pub fn push(&mut self, c: char) {
+        self.filter.push(c);
+        self.regex = Self::build_regex(&self.filter);
+    }
+
+    pub fn pop(&mut self) {
+        self.filter.pop();
+        self.regex = Self::build_regex(&self.filter);
+    }
+
+    pub fn clear(&mut self) {
+        self.filter.clear();
+        self.regex = None;
+    }
+}
+
+impl Display for Filter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.filter)
     }
 }
