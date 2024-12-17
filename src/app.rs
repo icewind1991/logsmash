@@ -79,8 +79,12 @@ impl LogMatch {
         if filter.is_empty() {
             return true;
         }
-        self.statements(app)
-            .any(|statement| filter.matches(statement.pattern))
+        self.statements(app).any(|statement| {
+            filter.matches(statement.pattern)
+                || filter.matches(statement.path)
+                || filter.matches(statement.path_prefix)
+            || statement.placeholders.iter().any(|placeholder| filter.matches(placeholder))
+        })
     }
 }
 
