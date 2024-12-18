@@ -14,7 +14,7 @@ impl TimeGraph {
         let histogram = Histogram::new_with_bounds(
             1,
             max(
-                end.unix_timestamp() as u64 - start.unix_timestamp() as u64 + 1,
+                (end.unix_timestamp() as u64).saturating_sub(start.unix_timestamp() as u64) + 1,
                 4,
             ),
             3,

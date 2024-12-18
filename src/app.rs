@@ -31,6 +31,17 @@ impl<'a> App<'a> {
     pub fn get_line(&self, index: usize) -> Option<&'a str> {
         self.log_file.nth(index)
     }
+
+    pub fn line_indices_by_request<'b>(
+        &'b self,
+        request_id: &'b str,
+    ) -> impl Iterator<Item = usize> + 'b {
+        self.lines
+            .iter()
+            .enumerate()
+            .filter(move |(_, line)| line.request_id == request_id)
+            .map(|(i, _)| i)
+    }
 }
 
 pub struct LogMatch {

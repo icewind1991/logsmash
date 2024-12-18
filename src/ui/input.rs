@@ -21,6 +21,7 @@ pub enum UiEvent {
     ClearFilter,
     Text(char),
     PopText(PopMode),
+    ByRequest,
 }
 
 pub enum PopMode {
@@ -51,6 +52,7 @@ pub fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEv
                     (_, KeyCode::Home) => Some(UiEvent::Up(usize::MAX, false)),
                     (_, KeyCode::Enter | KeyCode::Right) => Some(UiEvent::Select),
                     (Mode::Normal, KeyCode::Char('c')) => Some(UiEvent::Copy),
+                    (Mode::Normal, KeyCode::Char('r')) => Some(UiEvent::ByRequest),
                     (Mode::Normal, KeyCode::F(4) | KeyCode::Char('f')) => {
                         Some(UiEvent::EnterFilterMode)
                     }

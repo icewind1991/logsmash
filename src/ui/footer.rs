@@ -57,8 +57,12 @@ fn help(page: UiPage) -> &'static str {
     match page {
         UiPage::MatchList => "«Q» Exit - «Enter» Select - «F» Filter - «E» Show parse errors",
         UiPage::Match => "«Q» Exit - «Enter» Select - «F» Filter - «Esc» Back",
-        UiPage::Logs => "«Q» Exit - «F» Filter - «Esc» Back - «C» Copy log line",
-        UiPage::Log => "«Q» Exit - «Esc» Back - «R» Toggle raw - «C» Copy log line",
+        UiPage::Logs => {
+            "«Q» Exit - «F» Filter - «Esc» Back - «C» Copy log line - «R» Show logs for request"
+        }
+        UiPage::Log => {
+            "«Q» Exit - «Esc» Back - «R» Toggle raw - «C» Copy log line - «R» Show logs for request"
+        }
         UiPage::Errors => "«Q» Exit - «Esc» Back - «C» Copy log line",
     }
 }

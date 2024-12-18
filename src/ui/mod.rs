@@ -149,10 +149,11 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
             lines,
             table_state,
             filter,
+            grouping,
             ..
         }) => {
             frame.render_stateful_widget(
-                grouped_logs(app, lines, filter),
+                grouped_logs(app, lines, filter, *grouping),
                 layout[0].union(layout[1]),
                 table_state,
             );

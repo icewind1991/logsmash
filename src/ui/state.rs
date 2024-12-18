@@ -7,6 +7,7 @@ use crate::ui::UI_HEADER_SIZE;
 use crate::{copy_osc, parse_line_full};
 use derive_more::From;
 use ratatui::widgets::TableState;
+use std::borrow::Cow;
 use std::iter::once;
 
 #[derive(Clone, From, PartialEq)]
@@ -104,11 +105,12 @@ impl<'a> MatchState<'a> {
         let lines = selected_line.lines.as_slice();
         let table_state = ScrollbarTableState::new(lines.len());
         UiState::GroupedLogs(GroupedLogsState {
-            lines,
+            lines: lines.into(),
             table_state,
             previous: Box::new(self.into()),
             filter: Filter::default(),
             mode: Mode::Normal,
+            grouping: GroupedLogGrouping::Message,
         })
     }
 }
@@ -119,13 +121,20 @@ impl PartialEq for MatchState<'_> {
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum GroupedLogGrouping {
+    Message,
+    Request,
+}
+
 #[derive(Clone)]
 pub struct GroupedLogsState<'a> {
-    pub lines: &'a [usize],
+    pub lines: Cow<'a, [usize]>,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
     pub filter: Filter,
     mode: Mode,
+    pub grouping: GroupedLogGrouping,
 }
 
 impl<'a> GroupedLogsState<'a> {
@@ -133,8 +142,8 @@ impl<'a> GroupedLogsState<'a> {
         self.table_state.selected()
     }
 
-    fn enter(self, selected: usize, app: &'a App<'a>) -> UiState<'a> {
-        let log = if self.filter.is_empty() {
+    fn get_selected<'b>(&self, selected: usize, app: &'b App<'b>) -> &'b LogLine<'b> {
+        if self.filter.is_empty() {
             let line = self.lines[selected];
             &app.lines[line]
         } else {
@@ -144,7 +153,11 @@ impl<'a> GroupedLogsState<'a> {
                 .filter(|line| line.matches(&self.filter))
                 .nth(selected)
                 .expect("filtered select out of bounds")
-        };
+        }
+    }
+
+    fn enter(self, selected: usize, app: &'a App<'a>) -> UiState<'a> {
+        let log = self.get_selected(selected, app);
         let raw_line = app.get_line(log.index).unwrap();
         let full_line = parse_line_full(raw_line).unwrap();
         let trace_len = if let Some(exception) = &full_line.exception {
@@ -159,6 +172,21 @@ impl<'a> GroupedLogsState<'a> {
             full_line,
             table_state,
             previous: Box::new(self.into()),
+        })
+    }
+
+    fn by_request(self, selected: usize, app: &'a App<'a>) -> UiState<'a> {
+        let log = self.get_selected(selected, app);
+        let lines: Vec<_> = app.line_indices_by_request(&log.request_id).collect();
+
+        let table_state = ScrollbarTableState::new(lines.len());
+        UiState::GroupedLogs(GroupedLogsState {
+            lines: lines.into(),
+            mode: Mode::Normal,
+            filter: Filter::default(),
+            table_state,
+            previous: Box::new(self.into()),
+            grouping: GroupedLogGrouping::Request,
         })
     }
 }
@@ -187,6 +215,22 @@ pub struct LogState<'a> {
     pub full_line: FullLogLine,
     pub table_state: ScrollbarTableState,
     pub previous: Box<UiState<'a>>,
+}
+
+impl<'a> LogState<'a> {
+    fn by_request(self, app: &'a App<'a>) -> UiState<'a> {
+        let lines: Vec<_> = app.line_indices_by_request(&self.log.request_id).collect();
+
+        let table_state = ScrollbarTableState::new(lines.len());
+        UiState::GroupedLogs(GroupedLogsState {
+            lines: lines.into(),
+            mode: Mode::Normal,
+            filter: Filter::default(),
+            table_state,
+            previous: Box::new(self.into()),
+            grouping: GroupedLogGrouping::Request,
+        })
+    }
 }
 
 impl PartialEq for LogState<'_> {
@@ -411,6 +455,11 @@ impl<'a> UiState<'a> {
                 copy_osc(raw);
                 (false, UiState::Log(state))
             }
+            (UiState::GroupedLogs(state), UiEvent::ByRequest) => {
+                let selected = state.selected();
+                (true, state.by_request(selected, app))
+            }
+            (UiState::Log(state), UiEvent::ByRequest) => (true, state.by_request(app)),
             (UiState::Errors(state), UiEvent::Copy) => {
                 let raw = app
                     .error_lines
