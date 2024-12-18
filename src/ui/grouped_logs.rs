@@ -68,7 +68,10 @@ impl StatefulWidget for GroupedLogs<'_> {
             Constraint::Length(27),
         ];
         let table = ScrollbarTable::new(
-            lines.filter(|line| line.matches(self.filter)).map(log_row),
+            lines
+                .filter(|line| line.matches(self.filter))
+                .enumerate()
+                .map(|(i, line)| log_row(line, i.abs_diff(state.selected()) < 100)),
             widths,
         )
         .header(header);
@@ -86,12 +89,16 @@ impl StatefulWidget for GroupedLogs<'_> {
     }
 }
 
-fn log_row<'a>(line: &'a LogLine<'a>) -> Row<'a> {
-    Row::new([
-        Text::from(line.remote.as_str()),
-        Text::from(line.method.as_str()),
-        Text::from(line.url.as_ref()),
-        Text::from(line.request_id.as_str()),
-        Text::from(format_time(line.time)).alignment(Alignment::Right),
-    ])
+fn log_row<'a>(line: &'a LogLine<'a>, is_in_view: bool) -> Row<'a> {
+    if is_in_view {
+        Row::new([
+            Text::from(line.remote.as_str()),
+            Text::from(line.method.as_str()),
+            Text::from(line.url.as_ref()),
+            Text::from(line.request_id.as_str()),
+            Text::from(format_time(line.time)).alignment(Alignment::Right),
+        ])
+    } else {
+        Row::default()
+    }
 }
