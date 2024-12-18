@@ -1,6 +1,7 @@
 use crate::app::{App, Filter, LogMatch, EMPTY_FILTER};
 use crate::logline::{FullLogLine, LogLine};
 use crate::ui::footer::FooterParams;
+use crate::ui::input::{PopMode, UiEvent};
 use crate::ui::table::ScrollbarTableState;
 use crate::ui::UI_HEADER_SIZE;
 use crate::{copy_osc, parse_line_full};
@@ -479,29 +480,6 @@ impl<'a> UiState<'a> {
             },
         }
     }
-}
-
-pub enum UiEvent {
-    Quit,
-    Back,
-    Up(usize, bool),
-    Down(usize, bool),
-    Scroll(isize),
-    Errors,
-    Select,
-    #[allow(dead_code)]
-    SelectAt(usize),
-    Enter(usize),
-    Copy,
-    EnterFilterMode,
-    ClearFilter,
-    Text(char),
-    PopText(PopMode),
-}
-
-pub enum PopMode {
-    Character,
-    Word,
 }
 
 #[derive(PartialEq)]

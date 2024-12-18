@@ -4,32 +4,29 @@ use crate::ui::error_list::error_list;
 use crate::ui::footer::footer;
 use crate::ui::grouped_logs::grouped_logs;
 use crate::ui::histogram::UiHistogram;
+use crate::ui::input::handle_events;
 use crate::ui::match_list::match_list;
 use crate::ui::single_log::single_log;
 use crate::ui::single_match::grouped_lines;
 use crate::ui::state::{
-    ErrorState, GroupedLogsState, LogState, MatchListState, MatchState, Mode, PopMode, UiEvent,
-    UiPage, UiState,
+    ErrorState, GroupedLogsState, LogState, MatchListState, MatchState, UiState,
 };
-use ratatui::crossterm::event::{
-    DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseButton,
-    MouseEventKind,
-};
+use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use ratatui::crossterm::{event, ExecutableCommand};
+use ratatui::crossterm::ExecutableCommand;
 use ratatui::prelude::*;
 use ratatui::Terminal;
 use std::io;
 use std::io::stdout;
 use std::panic::{set_hook, take_hook};
-use std::time::Duration;
 
 mod error_list;
 mod footer;
 mod grouped_logs;
 mod histogram;
+mod input;
 mod match_list;
 mod single_log;
 mod single_match;
@@ -79,63 +76,6 @@ pub fn restore_tui() -> io::Result<()> {
     stdout().execute(DisableMouseCapture)?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
-}
-
-fn handle_events(page: UiPage, ui_state: &UiState) -> io::Result<Option<UiEvent>> {
-    if event::poll(Duration::from_millis(50))? {
-        match event::read()? {
-            Event::Key(key) if key.kind == event::KeyEventKind::Press => {
-                return Ok(match (ui_state.mode(), key.code) {
-                    (_, KeyCode::Char('c')) if key.modifiers == KeyModifiers::CONTROL => {
-                        Some(UiEvent::Quit)
-                    }
-                    (Mode::Normal, KeyCode::Esc) => Some(UiEvent::Back),
-
-                    (Mode::Normal, KeyCode::Char('q')) => Some(UiEvent::Quit),
-                    (Mode::Normal, KeyCode::Char('e')) if page == UiPage::MatchList => {
-                        Some(UiEvent::Errors)
-                    }
-                    (_, KeyCode::Left) if page != UiPage::MatchList => Some(UiEvent::Back),
-                    (_, KeyCode::Down) => Some(UiEvent::Down(1, true)),
-                    (_, KeyCode::Up) => Some(UiEvent::Up(1, true)),
-                    (_, KeyCode::PageDown) => Some(UiEvent::Down(10, false)),
-                    (_, KeyCode::PageUp) => Some(UiEvent::Up(10, false)),
-                    (_, KeyCode::End) => Some(UiEvent::Down(usize::MAX, false)),
-                    (_, KeyCode::Home) => Some(UiEvent::Up(usize::MAX, false)),
-                    (_, KeyCode::Enter | KeyCode::Right) => Some(UiEvent::Select),
-                    (Mode::Normal, KeyCode::Char('c')) => Some(UiEvent::Copy),
-                    (Mode::Normal, KeyCode::F(4) | KeyCode::Char('f')) => {
-                        Some(UiEvent::EnterFilterMode)
-                    }
-
-                    (Mode::FilterInput, KeyCode::Esc) => Some(UiEvent::ClearFilter),
-                    (Mode::FilterInput, KeyCode::F(4)) => Some(UiEvent::Back),
-                    (Mode::FilterInput, KeyCode::Backspace) => {
-                        Some(UiEvent::PopText(PopMode::Character))
-                    }
-                    (Mode::FilterInput, KeyCode::Char('w'))
-                        if key.modifiers == KeyModifiers::CONTROL =>
-                    {
-                        Some(UiEvent::PopText(PopMode::Word))
-                    }
-                    (Mode::FilterInput, KeyCode::Char(c)) => Some(UiEvent::Text(c)),
-                    _ => None,
-                });
-            }
-            Event::Mouse(mouse) => {
-                return Ok(match mouse.kind {
-                    MouseEventKind::ScrollUp => Some(UiEvent::Scroll(-1)),
-                    MouseEventKind::ScrollDown => Some(UiEvent::Scroll(1)),
-                    MouseEventKind::Down(MouseButton::Left) => {
-                        find_hit_row(mouse.row, ui_state).map(UiEvent::Enter)
-                    }
-                    _ => None,
-                })
-            }
-            _ => {}
-        }
-    }
-    Ok(None)
 }
 
 fn find_hit_row(row: u16, ui_state: &UiState) -> Option<usize> {
