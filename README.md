@@ -102,7 +102,7 @@ Currently, the program can match against data from the following sources:
 
 - [ ] Data from more app version
 - [ ] Support extracting app versions from a system report
-- [ ] Add filtering to all lists
+- [x] Add filtering to all lists
 
 ## Building
 
