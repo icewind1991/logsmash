@@ -1,4 +1,4 @@
-use ruzstd::frame_decoder::FrameDecoderError;
+use ruzstd::decoding::errors::FrameDecoderError;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 use zip::result::ZipError;

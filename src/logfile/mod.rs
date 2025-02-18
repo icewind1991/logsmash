@@ -5,7 +5,7 @@ use crate::logfile::archive::{Archive, ArchiveEntry, TarArchive, ZipArchive};
 use bzip2_rs::DecoderReader;
 use dialoguer::Select;
 use flate2::read::GzDecoder;
-use ruzstd::StreamingDecoder;
+use ruzstd::decoding::StreamingDecoder;
 use std::io::{Cursor, Read, Seek};
 use xz2::read::XzDecoder;
 
