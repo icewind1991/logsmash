@@ -6,8 +6,10 @@ use serde_json::Value;
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::sync::OnceLock;
 use time::format_description::well_known::iso8601::{Config, EncodedConfig, TimePrecision};
 use time::format_description::well_known::Iso8601;
+use time::format_description::OwnedFormatItem;
 use time::OffsetDateTime;
 use tinystr::TinyAsciiStr;
 
@@ -16,6 +18,9 @@ pub const TIME_FORMAT: EncodedConfig = Config::DEFAULT
         decimal_digits: None,
     })
     .encode();
+
+// ugly global because passing state to serde is hard
+pub static CUSTOM_TIME_FORMAT: OnceLock<Option<OwnedFormatItem>> = OnceLock::new();
 
 #[derive(Deserialize, Clone)]
 pub struct LogLine<'a> {
@@ -38,6 +43,7 @@ pub struct LogLine<'a> {
 }
 
 mod date {
+    use crate::logline::CUSTOM_TIME_FORMAT;
     use serde::de::Error;
     use serde::{Deserialize, Deserializer};
     use time::format_description::well_known::Iso8601;
@@ -69,6 +75,12 @@ mod date {
         deserializer: D,
     ) -> Result<OffsetDateTime, D::Error> {
         let str = <&str>::deserialize(deserializer)?;
+
+        if let Some(Some(format)) = CUSTOM_TIME_FORMAT.get() {
+            if let Some(date) = try_format(str, format) {
+                return Ok(date);
+            }
+        }
 
         if let Some(date) = try_format(str, &Iso8601::DATE_TIME_OFFSET) {
             return Ok(date);

@@ -18,6 +18,19 @@ logsmash ./logfile.log
 Logsmash supports both loading plain log files, compressed log files (`.gz`, `.bz2`, `.xz` or `.zst`), or archives
 containing log files (`.zip` or (compressed) `.tar`).
 
+### Date formats
+
+Since not all log files use the same date format, logsmash tries to parse each data with a number of different log
+formats.
+
+If the log file you're opening is using an unsupported log format, you can specify a custom date format with the
+`--date-format` option.
+
+The data format can either be in [the strftime format](https://man7.org/linux/man-pages/man3/strftime.3.html) or
+in [the time crate format (version 2)](https://time-rs.github.io/book/api/format-description.html).
+
+For example: `[day].[month].[year] - [hour]:[minute]:[second]`.
+
 ## Log sources
 
 Logsmash is built around matching log line to their source, either a call to a logging function or an exception being

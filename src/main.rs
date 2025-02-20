@@ -1,7 +1,7 @@
 use crate::app::{App, LogMatch};
 use crate::error::LogError;
 use crate::logfile::LogFile;
-use crate::logline::{Exception, FullException, FullLogLine, LogLine};
+use crate::logline::{Exception, FullException, FullLogLine, LogLine, CUSTOM_TIME_FORMAT};
 use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use base64::prelude::*;
@@ -26,6 +26,7 @@ mod ui;
 
 #[cfg(not(target_os = "windows"))]
 use tikv_jemallocator::Jemalloc;
+use time::format_description::{parse_owned, parse_strftime_owned};
 
 #[cfg(not(target_os = "windows"))]
 #[global_allocator]
@@ -37,10 +38,27 @@ struct Args {
     /// Collect data and exit, intended for profiling
     #[arg(long)]
     profile: bool,
+    /// Date format to use when parsing log lines
+    #[arg(long)]
+    date_format: Option<String>,
 }
 
 fn main() -> MainResult {
     let args = Args::parse();
+
+    if let Some(date_format) = args.date_format.as_deref() {
+        let date_format = if date_format.contains('%') {
+            parse_strftime_owned(date_format)
+                .inspect_err(|_| eprintln!("Invalid strftime format: {date_format}"))?
+        } else {
+            parse_owned::<2>(date_format)
+                .inspect_err(|_| eprintln!("Invalid date format: {date_format}"))?
+        };
+
+        CUSTOM_TIME_FORMAT
+            .set(Some(date_format))
+            .expect("Set only once");
+    }
 
     let file = File::open(&args.file)?;
     let file = BufReader::new(file);
