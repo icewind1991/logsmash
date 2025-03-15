@@ -1,12 +1,12 @@
 use crate::app::{App, LogMatch};
 use crate::error::LogError;
 use crate::logfile::LogFile;
-use crate::logline::{Exception, FullException, FullLogLine, LogLine, CUSTOM_TIME_FORMAT};
 use crate::matcher::{MatchResult, Matcher};
 use crate::ui::run_ui;
 use base64::prelude::*;
 use clap::Parser;
 use indicatif::{ParallelProgressIterator, ProgressStyle};
+use logfile::logline::{Exception, FullException, FullLogLine, LogLine, CUSTOM_TIME_FORMAT};
 use logsmash_data::{default_apps, get_statements, SourceDefinition};
 use main_error::MainResult;
 use rayon::prelude::*;
@@ -19,7 +19,6 @@ use std::iter::once;
 mod app;
 mod error;
 mod logfile;
-mod logline;
 mod matcher;
 mod timegraph;
 mod ui;
@@ -99,7 +98,7 @@ fn main() -> MainResult {
         .map(|(index, line)| {
             let mut parsed = parse_line(line);
             if let Ok(parsed) = parsed.as_mut() {
-                parsed.index = index;
+                parsed.index = index.into();
             };
             parsed.map_err(|err| (index, line, err))
         })
@@ -114,7 +113,7 @@ fn main() -> MainResult {
 
     results.sort_by_key(|res| match res {
         Ok((line, _)) => line.index,
-        Err((index, _, _)) => *index,
+        Err((index, _, _)) => index.into(),
     });
 
     let mut error_lines = Vec::with_capacity(32);

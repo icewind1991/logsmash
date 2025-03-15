@@ -1,5 +1,5 @@
 use crate::app::{App, Filter};
-use crate::logline::{format_time, LogLine};
+use crate::logfile::logline::{format_time, LogLine};
 use crate::ui::state::GroupedLogGrouping;
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::{ScrollbarTable, ScrollbarTableState};

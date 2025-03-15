@@ -1,4 +1,5 @@
 use crate::app::Filter;
+use crate::logfile::LogIndex;
 use ahash::AHasher;
 use logsmash_data::LogLevel;
 use serde::Deserialize;
@@ -25,7 +26,7 @@ pub static CUSTOM_TIME_FORMAT: OnceLock<Option<OwnedFormatItem>> = OnceLock::new
 #[derive(Deserialize, Clone)]
 pub struct LogLine<'a> {
     #[serde(default)]
-    pub index: usize,
+    pub index: LogIndex,
     #[serde(rename = "reqId")]
     pub request_id: TinyAsciiStr<32>,
     pub user: TinyAsciiStr<64>,
@@ -43,7 +44,7 @@ pub struct LogLine<'a> {
 }
 
 mod date {
-    use crate::logline::CUSTOM_TIME_FORMAT;
+    use crate::logfile::logline::CUSTOM_TIME_FORMAT;
     use serde::de::Error;
     use serde::{Deserialize, Deserializer};
     use time::format_description::well_known::Iso8601;

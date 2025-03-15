@@ -1,5 +1,4 @@
-use crate::logfile::LogFile;
-use crate::logline::LogLine;
+use crate::logfile::{LogFile, LogIndex, LogLine};
 use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::{LoggingStatementWithPathPrefix, StatementList};
@@ -28,7 +27,7 @@ impl<'a> App<'a> {
         self.matches.len() + 1 + unmatched_line_count
     }
 
-    pub fn get_line(&self, index: usize) -> Option<&'a str> {
+    pub fn get_line(&self, index: LogIndex) -> Option<&'a str> {
         self.log_file.nth(index)
     }
 

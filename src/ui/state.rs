@@ -1,5 +1,5 @@
 use crate::app::{App, Filter, LogMatch, EMPTY_FILTER};
-use crate::logline::{FullLogLine, LogLine};
+use crate::logfile::logline::{FullLogLine, LogLine};
 use crate::ui::footer::FooterParams;
 use crate::ui::input::{PopMode, UiEvent};
 use crate::ui::table::ScrollbarTableState;

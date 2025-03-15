@@ -1,13 +1,31 @@
 mod archive;
+pub mod logline;
 
 use crate::error::ReadError;
 use crate::logfile::archive::{Archive, ArchiveEntry, TarArchive, ZipArchive};
 use bzip2_rs::DecoderReader;
 use dialoguer::Select;
 use flate2::read::GzDecoder;
+pub use logline::LogLine;
 use ruzstd::decoding::StreamingDecoder;
+use serde::Deserialize;
 use std::io::{Cursor, Read, Seek};
 use xz2::read::XzDecoder;
+
+#[derive(Debug, Deserialize, Default, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub struct LogIndex(usize);
+
+impl From<usize> for LogIndex {
+    fn from(index: usize) -> Self {
+        Self(index)
+    }
+}
+
+impl From<&usize> for LogIndex {
+    fn from(index: &usize) -> Self {
+        Self(*index)
+    }
+}
 
 pub struct LogFile {
     content: String,
@@ -53,8 +71,8 @@ impl LogFile {
         self.content.lines()
     }
 
-    pub fn nth(&self, index: usize) -> Option<&str> {
-        self.iter().nth(index)
+    pub fn nth(&self, index: LogIndex) -> Option<&str> {
+        self.iter().nth(index.0)
     }
 }
 

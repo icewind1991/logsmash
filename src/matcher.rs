@@ -1,4 +1,4 @@
-use crate::logline::{Exception, LogLine};
+use crate::logfile::logline::{Exception, LogLine};
 use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use std::hash::{Hash, Hasher};
@@ -263,7 +263,7 @@ impl<'a> SingleMatchState<'a> {
 
 #[test]
 fn test_matcher() {
-    use crate::logline::Exception;
+    use crate::logfile::logline::Exception;
     use std::str::FromStr;
     use time::OffsetDateTime;
     use tinystr::TinyAsciiStr;
