@@ -4,3 +4,4 @@ target
 result
 *.log
 profile.json
+*.out.*

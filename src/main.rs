@@ -23,11 +23,11 @@ mod matcher;
 mod timegraph;
 mod ui;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_env = "musl")]
 use tikv_jemallocator::Jemalloc;
 use time::format_description::{parse_owned, parse_strftime_owned};
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_env = "musl")]
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 
