@@ -27,7 +27,7 @@ pub fn footer<'a>(app: &App<'a>, params: FooterParams<'a>) -> Table<'a> {
             Table::new(
                 [Row::new([
                     Text::from(help(page)),
-                    Text::from(format!("{} unmatched items", app.unmatched.lines.len())),
+                    Text::from(format!("{} unmatched items", app.unmatched.count())),
                     Text::from(format!("{} parse errors", app.error_count)),
                 ])],
                 widths,

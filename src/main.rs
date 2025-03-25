@@ -117,7 +117,7 @@ fn main() -> MainResult {
     });
 
     let mut error_lines = Vec::with_capacity(32);
-    let mut parsed_lines = Vec::with_capacity(1024);
+    let mut parsed_lines = Vec::with_capacity(results.len());
     let mut unmatched_lines = Vec::with_capacity(256);
 
     let mut parsed_index = 0;

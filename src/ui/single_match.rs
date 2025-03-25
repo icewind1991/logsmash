@@ -38,7 +38,7 @@ pub fn grouped_lines<'a>(
             Text::from(""),
             Text::from(""),
             Text::from(log_match.sparkline.as_str()),
-            Text::from(log_match.lines.len().to_string()),
+            Text::from(log_match.count().to_string()),
         ]))
         .chain(
             grouped

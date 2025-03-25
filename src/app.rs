@@ -19,11 +19,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     pub fn match_lines(&self) -> usize {
-        let unmatched_line_count = if self.unmatched.lines.is_empty() {
-            0
-        } else {
-            1
-        };
+        let unmatched_line_count = if self.unmatched.count == 0 { 0 } else { 1 };
         self.matches.len() + 1 + unmatched_line_count
     }
 
@@ -45,7 +41,7 @@ impl<'a> App<'a> {
 
 pub struct LogMatch {
     pub result: Option<MatchResult>,
-    pub lines: Vec<usize>,
+    pub count: usize,
     pub histogram: TimeGraph,
     pub sparkline: String,
     pub all: GroupedLines,
@@ -60,17 +56,18 @@ impl LogMatch {
         for line in lines.iter().map(|line| &all_lines[*line]) {
             histogram.add(line.time);
         }
+        let count = lines.len();
         let grouped = group_lines(all_lines, lines.iter().copied());
         let sparkline = histogram.sparkline::<10>();
         let all = GroupedLines {
             sparkline: sparkline.clone(),
             histogram: histogram.clone(),
-            lines: lines.clone(),
+            lines,
         };
 
         LogMatch {
             result,
-            lines,
+            count,
             histogram,
             sparkline,
             grouped,
@@ -116,7 +113,7 @@ impl LogMatch {
 
 impl LogMatch {
     pub fn count(&self) -> usize {
-        self.lines.len()
+        self.count
     }
 }
 

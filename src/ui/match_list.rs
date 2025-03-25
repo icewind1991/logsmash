@@ -30,7 +30,7 @@ pub fn match_list<'a>(app: &'a App<'a>, filter: &Filter) -> ScrollbarTable<'a> {
     ];
 
     let all = log_row(&app.all, app, "All lines");
-    let unmatched = if app.unmatched.lines.is_empty() {
+    let unmatched = if app.unmatched.count() == 0 {
         Either::Right(empty())
     } else {
         Either::Left(once(log_row(&app.unmatched, app, "Unmatched lines")))
