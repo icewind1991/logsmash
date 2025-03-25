@@ -6,7 +6,7 @@ use crate::logfile::archive::{Archive, ArchiveEntry, TarArchive, ZipArchive};
 use bzip2_rs::DecoderReader;
 use dialoguer::Select;
 use flate2::read::GzDecoder;
-pub use logline::LogLine;
+pub use logline::{LineNumber, LogLine};
 use ruzstd::decoding::StreamingDecoder;
 use serde::Deserialize;
 use std::io::{Cursor, Read, Seek};

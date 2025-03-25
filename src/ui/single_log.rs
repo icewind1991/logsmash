@@ -142,12 +142,7 @@ fn trace_line(trace: &Trace, path_prefix_length: usize) -> Row {
                 .get(path_prefix_length..)
                 .unwrap_or_default(),
         ),
-        Text::from(if trace.line > 0 {
-            trace.line.to_string()
-        } else {
-            String::new()
-        })
-        .alignment(Alignment::Right),
+        Text::from(trace.line.to_string()).alignment(Alignment::Right),
         Text::from(trace.function().to_string()),
     ])
 }

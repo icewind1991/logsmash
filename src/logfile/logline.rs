@@ -1,6 +1,7 @@
 use crate::app::Filter;
 use crate::logfile::LogIndex;
 use ahash::AHasher;
+use derive_more::{Display, From};
 use logsmash_data::LogLevel;
 use serde::Deserialize;
 use serde_json::Value;
@@ -164,13 +165,18 @@ impl<'a> LogLine<'a> {
     }
 }
 
+#[derive(
+    Default, Deserialize, Debug, Copy, Clone, Hash, Display, From, PartialEq, Eq, Ord, PartialOrd,
+)]
+pub struct LineNumber(usize);
+
 #[derive(Deserialize, Debug, Hash, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Exception<'a> {
     pub message: Cow<'a, str>,
     pub exception: Cow<'a, str>,
     pub file: Cow<'a, str>,
-    pub line: usize,
+    pub line: LineNumber,
 }
 
 #[derive(Deserialize, Clone)]
@@ -203,7 +209,7 @@ pub struct FullException {
     pub code: ExceptionCode,
     pub trace: Vec<Trace>,
     pub file: String,
-    pub line: usize,
+    pub line: LineNumber,
     pub previous: Option<Box<FullException>>,
 }
 
@@ -228,13 +234,10 @@ impl FullException {
 pub struct Trace {
     #[serde(default)]
     pub file: String,
-    #[serde(default)]
-    pub line: usize,
-    #[serde(default)]
+    pub line: LineNumber,
     pub function: String,
-    #[serde(default)]
     pub class: String,
-    #[serde(default, rename = "type")]
+    #[serde(rename = "type")]
     pub ty: Option<TinyAsciiStr<4>>,
     #[serde(default)]
     pub args: Vec<Value>,

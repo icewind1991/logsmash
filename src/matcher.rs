@@ -1,4 +1,5 @@
 use crate::logfile::logline::{Exception, LogLine};
+use crate::logfile::LineNumber;
 use itertools::Either;
 use logsmash_data::{LogLevel, LoggingStatement, StatementList};
 use std::hash::{Hash, Hasher};
@@ -11,7 +12,7 @@ pub struct LogMatch {
     pattern: &'static str,
     exception: Option<&'static str>,
     path: &'static str,
-    line: usize,
+    line: LineNumber,
     index: usize,
 }
 
@@ -26,7 +27,7 @@ impl LogMatch {
             },
             exception: statement.exception,
             path: statement.path,
-            line: statement.line,
+            line: statement.line.into(),
             index,
         }
     }

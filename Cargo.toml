@@ -20,7 +20,7 @@ time = { version = "0.3.37", features = ["serde", "serde-well-known", "parsing",
 hdrhistogram = "7.5.4"
 ahash = "0.8.11"
 base64 = "0.22.1"
-derive_more = { version = "2.0.1", features = ["from"] }
+derive_more = { version = "2.0.1", features = ["from", "display"] }
 rayon = "1.10.0"
 tar = "0.4.43"
 zip = "2.2.2"
