@@ -37,7 +37,7 @@ pub fn grouped_lines<'a>(
             Text::from("All lines"),
             Text::from(""),
             Text::from(""),
-            Text::from(log_match.sparkline.as_str()),
+            Text::from(log_match.sparkline(app)),
             Text::from(log_match.count().to_string()),
         ]))
         .chain(
@@ -58,7 +58,7 @@ fn group_row<'a>(app: &'a App, group: &'a GroupedLines) -> Row<'a> {
         Text::from(line.level.as_str()),
         Text::from(line.app.as_ref()),
         Text::from(line.display()),
-        Text::from(group.sparkline.as_str()),
+        Text::from(group.sparkline(app)),
         Text::from(group.len().to_string()),
     ])
 }

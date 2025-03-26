@@ -65,7 +65,7 @@ fn log_row<'a>(result: &'a LogMatch, app: &'a App, name: &'static str) -> Row<'a
             Text::from(message),
             Text::from(paths),
             Text::from(lines).alignment(Alignment::Right),
-            Text::from(result.sparkline.as_str()),
+            Text::from(result.sparkline(app)),
             Text::from(result.count().to_string()),
         ])
         .height(match_result.len() as u16)
@@ -74,7 +74,7 @@ fn log_row<'a>(result: &'a LogMatch, app: &'a App, name: &'static str) -> Row<'a
             Text::from(name),
             Text::from(""),
             Text::from(""),
-            Text::from(result.sparkline.as_str()),
+            Text::from(result.sparkline(app)),
             Text::from(result.count().to_string()),
         ])
     }

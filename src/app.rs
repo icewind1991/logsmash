@@ -3,6 +3,7 @@ use crate::matcher::MatchResult;
 use crate::timegraph::TimeGraph;
 use logsmash_data::{LoggingStatementWithPathPrefix, StatementList};
 use regex::{escape, Regex, RegexBuilder};
+use std::cell::OnceCell;
 use std::collections::BTreeMap;
 use std::fmt::Display;
 
@@ -42,37 +43,44 @@ impl<'a> App<'a> {
 pub struct LogMatch {
     pub result: Option<MatchResult>,
     pub count: usize,
-    pub histogram: TimeGraph,
-    pub sparkline: String,
+    pub histogram: OnceCell<TimeGraph>,
+    pub sparkline: OnceCell<String>,
     pub all: GroupedLines,
     pub grouped: Vec<GroupedLines>,
 }
 
 impl LogMatch {
     pub fn new(result: Option<MatchResult>, lines: Vec<usize>, all_lines: &[LogLine]) -> Self {
-        let min_time = all_lines[0].time;
-        let max_time = all_lines.last().unwrap().time;
-        let mut histogram = TimeGraph::new(min_time, max_time);
-        for line in lines.iter().map(|line| &all_lines[*line]) {
-            histogram.add(line.time);
-        }
         let count = lines.len();
         let grouped = group_lines(all_lines, lines.iter().copied());
-        let sparkline = histogram.sparkline::<10>();
-        let all = GroupedLines {
-            sparkline: sparkline.clone(),
-            histogram: histogram.clone(),
-            lines,
-        };
+        let all = GroupedLines::new(lines);
 
         LogMatch {
             result,
             count,
-            histogram,
-            sparkline,
+            histogram: OnceCell::new(),
+            sparkline: OnceCell::new(),
             grouped,
             all,
         }
+    }
+
+    pub fn sparkline(&self, app: &App) -> &str {
+        self.sparkline
+            .get_or_init(|| self.histogram(app).sparkline::<10>())
+            .as_str()
+    }
+
+    pub fn histogram(&self, app: &App) -> &TimeGraph {
+        self.histogram.get_or_init(|| {
+            let min_time = app.lines[0].time;
+            let max_time = app.lines.last().unwrap().time;
+            let mut histogram = TimeGraph::new(min_time, max_time);
+            for line in self.all.lines.iter().map(|line| &app.lines[*line]) {
+                histogram.add(line.time);
+            }
+            histogram
+        })
     }
 
     pub fn row_count(&self) -> usize {
@@ -126,7 +134,7 @@ fn group_lines<I: Iterator<Item = usize>>(all_lines: &[LogLine], indices: I) -> 
 
     let mut list: Vec<_> = map
         .into_values()
-        .map(|lines| GroupedLines::new(lines, all_lines))
+        .map(|lines| GroupedLines::new(lines))
         .collect();
     list.sort_by_key(|list| list.len());
     list.reverse();
@@ -135,24 +143,35 @@ fn group_lines<I: Iterator<Item = usize>>(all_lines: &[LogLine], indices: I) -> 
 
 pub struct GroupedLines {
     pub lines: Vec<usize>,
-    pub histogram: TimeGraph,
-    pub sparkline: String,
+    pub histogram: OnceCell<TimeGraph>,
+    pub sparkline: OnceCell<String>,
 }
 
 impl GroupedLines {
-    pub fn new(lines: Vec<usize>, all_lines: &[LogLine]) -> Self {
-        let min_time = all_lines[0].time;
-        let max_time = all_lines.last().unwrap().time;
-        let mut histogram = TimeGraph::new(min_time, max_time);
-        for line in lines.iter().map(|line| &all_lines[*line]) {
-            histogram.add(line.time);
-        }
-        let sparkline = histogram.sparkline::<10>();
+    pub fn new(lines: Vec<usize>) -> Self {
         GroupedLines {
             lines,
-            histogram,
-            sparkline,
+            histogram: OnceCell::new(),
+            sparkline: OnceCell::new(),
         }
+    }
+
+    pub fn sparkline(&self, app: &App) -> &str {
+        self.sparkline
+            .get_or_init(|| self.histogram(app).sparkline::<10>())
+            .as_str()
+    }
+
+    pub fn histogram(&self, app: &App) -> &TimeGraph {
+        self.histogram.get_or_init(|| {
+            let min_time = app.lines[0].time;
+            let max_time = app.lines.last().unwrap().time;
+            let mut histogram = TimeGraph::new(min_time, max_time);
+            for line in self.lines.iter().map(|line| &app.lines[*line]) {
+                histogram.add(line.time);
+            }
+            histogram
+        })
     }
 
     pub fn len(&self) -> usize {

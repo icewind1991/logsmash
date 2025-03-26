@@ -112,12 +112,12 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
         }) => {
             let selected = table_state.selected();
             let histogram = if selected == 0 {
-                &app.all.histogram
+                app.all.histogram(app)
             } else if selected < app.matches.len() + 1 {
                 let log_match = &app.matches[selected - 1];
-                &log_match.histogram
+                log_match.histogram(app)
             } else {
-                &app.unmatched.histogram
+                app.unmatched.histogram(app)
             };
 
             frame.render_widget(UiHistogram::new(histogram), layout[0]);
@@ -137,7 +137,7 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
                 &result.grouped[selected - 1]
             };
 
-            frame.render_widget(UiHistogram::new(&selected_group.histogram), layout[0]);
+            frame.render_widget(UiHistogram::new(&selected_group.histogram(app)), layout[0]);
             frame.render_stateful_widget(
                 grouped_lines(app, result, filter),
                 layout[1],
