@@ -132,10 +132,7 @@ fn group_lines<I: Iterator<Item = usize>>(all_lines: &[LogLine], indices: I) -> 
         map.entry(line.identity()).or_default().push(i);
     }
 
-    let mut list: Vec<_> = map
-        .into_values()
-        .map(|lines| GroupedLines::new(lines))
-        .collect();
+    let mut list: Vec<_> = map.into_values().map(GroupedLines::new).collect();
     list.sort_by_key(|list| list.len());
     list.reverse();
     list

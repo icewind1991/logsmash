@@ -265,6 +265,7 @@ impl<'a> SingleMatchState<'a> {
 #[test]
 fn test_matcher() {
     use crate::logfile::logline::Exception;
+    use crate::logfile::LogIndex;
     use std::str::FromStr;
     use time::OffsetDateTime;
     use tinystr::TinyAsciiStr;
@@ -333,7 +334,7 @@ fn test_matcher() {
         message: "Not allowed to rename a shared album".into(),
         exception: None,
         time: OffsetDateTime::now_utc(),
-        index: 0,
+        index: LogIndex::from(0),
         method: TinyAsciiStr::from_str("GET").unwrap(),
         remote: TinyAsciiStr::from_str("1.2.3.4").unwrap(),
         user: TinyAsciiStr::from_str("user").unwrap(),
@@ -406,7 +407,7 @@ fn test_matcher() {
                     message: "".into(),
                     exception: "Bar\\FooException".into(),
                     file: "short".into(),
-                    line: 68,
+                    line: LineNumber::from(68),
                 }),
                 ..default_log.clone()
             }

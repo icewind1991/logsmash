@@ -137,7 +137,7 @@ fn ui(frame: &mut Frame, app: &App, state: &mut UiState) {
                 &result.grouped[selected - 1]
             };
 
-            frame.render_widget(UiHistogram::new(&selected_group.histogram(app)), layout[0]);
+            frame.render_widget(UiHistogram::new(selected_group.histogram(app)), layout[0]);
             frame.render_stateful_widget(
                 grouped_lines(app, result, filter),
                 layout[1],

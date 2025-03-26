@@ -1,6 +1,4 @@
 use crate::app::{App, Filter, GroupedLines, LogMatch};
-use crate::ui::grouped_logs::GroupedLogs;
-use crate::ui::state::GroupedLogGrouping;
 use crate::ui::style::TABLE_HEADER_STYLE;
 use crate::ui::table::{ScrollbarTable, ScrollbarTableState};
 use ratatui::buffer::Buffer;
@@ -18,7 +16,7 @@ pub fn grouped_lines<'a>(
     SingleMatchTable {
         app,
         log_match,
-        filter
+        filter,
     }
 }
 
