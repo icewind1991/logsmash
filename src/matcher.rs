@@ -337,7 +337,7 @@ fn test_matcher() {
         index: LogIndex::from(0),
         method: TinyAsciiStr::from_str("GET").unwrap(),
         remote: TinyAsciiStr::from_str("1.2.3.4").unwrap(),
-        user: TinyAsciiStr::from_str("user").unwrap(),
+        user: TinyAsciiStr::from_str("user").unwrap().into(),
         url: "/url".into(),
         request_id: TinyAsciiStr::from_str("123456").unwrap(),
     };

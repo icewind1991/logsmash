@@ -57,7 +57,12 @@ impl StatefulWidget for GroupedLogs<'_> {
             .wrap(Wrap::default()),
             GroupedLogGrouping::Request => Paragraph::new(format!(
                 "{} {}\n\n  {} from {} by {} - Nextcloud {}",
-                line.method, line.url, line.request_id, line.remote, line.user, line.version,
+                line.method,
+                line.url,
+                line.request_id,
+                line.remote,
+                line.user.as_str(),
+                line.version,
             ))
             .wrap(Wrap::default()),
         };

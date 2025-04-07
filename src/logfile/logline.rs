@@ -3,7 +3,7 @@ use crate::logfile::LogIndex;
 use ahash::AHasher;
 use derive_more::{Display, From};
 use logsmash_data::LogLevel;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
@@ -30,7 +30,7 @@ pub struct LogLine<'a> {
     pub index: LogIndex,
     #[serde(rename = "reqId")]
     pub request_id: TinyAsciiStr<32>,
-    pub user: TinyAsciiStr<64>,
+    pub user: LogUser,
     pub method: TinyAsciiStr<12>,
     pub url: Cow<'a, str>,
     #[serde(rename = "remoteAddr")]
@@ -42,6 +42,39 @@ pub struct LogLine<'a> {
     pub app: Cow<'a, str>,
     #[serde(with = "date")]
     pub time: OffsetDateTime,
+}
+
+#[derive(Clone)]
+pub enum LogUser {
+    None,
+    User(TinyAsciiStr<64>),
+}
+
+impl LogUser {
+    pub fn as_str(&self) -> &str {
+        match self {
+            LogUser::None => "",
+            LogUser::User(user) => user.as_str(),
+        }
+    }
+}
+
+impl From<TinyAsciiStr<64>> for LogUser {
+    fn from(user: TinyAsciiStr<64>) -> Self {
+        LogUser::User(user)
+    }
+}
+
+impl<'de> Deserialize<'de> for LogUser {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match TinyAsciiStr::deserialize(deserializer) {
+            Ok(user) => Ok(LogUser::User(user)),
+            Err(_) => Ok(LogUser::None),
+        }
+    }
 }
 
 mod date {
@@ -160,7 +193,7 @@ impl<'a> LogLine<'a> {
                 || filter_part.is_match(&self.url)
                 || filter_part.is_match(&self.method)
                 || filter_part.is_match(&self.remote)
-                || filter_part.is_match(&self.user)
+                || filter_part.is_match(self.user.as_str())
         })
     }
 }
