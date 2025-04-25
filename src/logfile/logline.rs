@@ -269,6 +269,7 @@ pub struct Trace {
     pub file: String,
     pub line: LineNumber,
     pub function: String,
+    #[serde(default)]
     pub class: String,
     #[serde(rename = "type")]
     pub ty: Option<TinyAsciiStr<4>>,
