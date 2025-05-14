@@ -32,6 +32,7 @@ use time::format_description::{parse_owned, parse_strftime_owned};
 static GLOBAL: Jemalloc = Jemalloc;
 
 #[derive(Debug, Parser)]
+#[command(version, about, long_about = None)]
 struct Args {
     file: String,
     /// Collect data and exit, intended for profiling
